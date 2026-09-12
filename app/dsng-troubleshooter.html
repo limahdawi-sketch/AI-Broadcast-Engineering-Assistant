@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSNG Troubleshooting Assistant / مساعد استكشاف أعطال DSNG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B1016;
+    --panel: #131A23;
+    --panel-2: #0F151D;
+    --line: #223041;
+    --text: #E7EEF5;
+    --text-dim: #8FA1B3;
+    --amber: #F0A63A;
+    --cyan: #35C9C1;
+    --red: #E5555B;
+    --violet: #8B7FE8;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, #14202c 0%, transparent 55%),
+      radial-gradient(ellipse at 100% 0%, #10161f 0%, transparent 50%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Tajawal',sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .wrap{max-width:780px;margin:0 auto;}
+
+  header{margin-bottom:22px;}
+  .eyebrow-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+  .eyebrow-left{display:flex;align-items:center;gap:10px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);flex-shrink:0;}
+  .station-id{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);letter-spacing:.02em;}
+  .header-right{display:flex;align-items:center;gap:10px;}
+  .version-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);border:1px solid var(--line);padding:3px 9px;border-radius:2px;}
+  .lang-toggle{
+    display:flex;border:1px solid var(--line);border-radius:2px;overflow:hidden;font-family:'JetBrains Mono',monospace;font-size:11px;
+  }
+  .lang-toggle button{background:var(--panel);color:var(--text-dim);border:none;padding:5px 11px;cursor:pointer;font-family:inherit;font-size:inherit;}
+  .lang-toggle button.active{background:var(--cyan);color:#06181a;font-weight:700;}
+  h1{font-size:26px;font-weight:900;margin:0 0 6px;line-height:1.35;}
+  .sub{color:var(--text-dim);font-size:14.5px;line-height:1.7;max-width:60ch;}
+
+  .info-bar{
+    margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
+  }
+  @media (max-width:520px){.info-bar{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+  .field input, .field select{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    border-radius:2px;padding:8px 10px;font-family:'Tajawal',sans-serif;font-size:13.5px;
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--cyan);}
+
+  details.about{margin-top:14px;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);}
+  details.about summary{
+    cursor:pointer;padding:12px 16px;font-size:13.5px;font-weight:700;color:var(--text-dim);
+    list-style:none;display:flex;align-items:center;gap:8px;
+  }
+  details.about summary::-webkit-details-marker{display:none;}
+  details.about summary::before{content:'+';color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:15px;width:14px;}
+  details.about[open] summary::before{content:'\2013';}
+  .about-body{padding:0 16px 16px;font-size:13.5px;line-height:1.85;color:var(--text-dim);}
+  .about-body h4{color:var(--text);font-size:13px;margin:14px 0 6px;font-family:'JetBrains Mono',monospace;font-weight:600;}
+  .about-body p{margin:0 0 4px;}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:22px 0 30px;}
+  @media (max-width:520px){.grid{grid-template-columns:1fr;}}
+  .card-btn{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 16px 14px; text-align:right; cursor:pointer; color:var(--text);
+    display:flex; flex-direction:column; gap:10px;
+    transition:border-color .15s ease, transform .1s ease; font-family:inherit;
+  }
+  .card-btn:hover{border-color:var(--cyan);}
+  .card-btn:active{transform:scale(.99);}
+  .card-btn svg{width:22px;height:22px;stroke:var(--cyan);flex-shrink:0;}
+  .card-btn .ct{font-size:15px;font-weight:700;}
+  .card-btn .cd{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+
+  .stats-line{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-dim);margin:-16px 0 26px;text-align:center;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px 20px;display:none;}
+  .panel.active{display:block;}
+  .panel-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap;}
+  .cat-tag{font-size:12px;color:var(--cyan);font-family:'JetBrains Mono',monospace;}
+  .icon-btn{
+    background:transparent;border:1px solid var(--line);color:var(--text-dim);
+    font-family:'Tajawal',sans-serif;font-size:12.5px;padding:6px 12px;border-radius:var(--radius);cursor:pointer;
+  }
+  .icon-btn:hover{color:var(--text);border-color:var(--text-dim);}
+  .icon-btn:disabled{opacity:.35;cursor:default;}
+  .icon-btn:disabled:hover{color:var(--text-dim);border-color:var(--line);}
+
+  .trail{margin-bottom:18px;border-right:2px solid var(--line);padding-right:12px;display:flex;flex-direction:column;gap:10px;}
+  html[dir="ltr"] .trail{border-right:none;border-left:2px solid var(--line);padding-right:0;padding-left:12px;}
+  .trail-item{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text-dim);line-height:1.6;}
+  .trail-item b{color:var(--text);font-weight:500;}
+
+  .q-text{font-size:17px;font-weight:700;line-height:1.6;margin:0 0 16px;}
+  .opts{display:flex;flex-direction:column;gap:8px;}
+  .opt-btn{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text); text-align:right;
+    padding:12px 14px; border-radius:var(--radius); font-family:inherit; font-size:14.5px; cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .opt-btn:hover{border-color:var(--cyan);background:#101822;}
+
+  .result{border-radius:var(--radius);border:1px solid var(--line);overflow:hidden;}
+  .result-head{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);}
+  .sev-tag{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 8px;border-radius:2px;flex-shrink:0;}
+  .sev-critical .sev-tag{background:rgba(229,85,91,.15);color:var(--red);}
+  .sev-warning .sev-tag{background:rgba(240,166,58,.15);color:var(--amber);}
+  .sev-info .sev-tag{background:rgba(53,201,193,.15);color:var(--cyan);}
+  .result-title{font-size:16.5px;font-weight:700;}
+  .result-body{padding:16px;background:var(--panel-2);}
+  .result-body .label{font-size:11.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+  .result-body ul{margin:0 0 4px;padding-right:18px;}
+  html[dir="ltr"] .result-body ul{padding-right:0;padding-left:18px;}
+  .result-body li{font-size:14.5px;line-height:1.75;margin-bottom:6px;}
+
+  .result-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+  .btn{border:1px solid var(--line);background:transparent;color:var(--text);font-family:'Tajawal',sans-serif;font-size:13px;padding:9px 16px;border-radius:var(--radius);cursor:pointer;}
+  .btn:hover{border-color:var(--cyan);}
+  .btn.primary{background:var(--cyan);color:#06181a;border-color:var(--cyan);font-weight:700;}
+  .btn.primary:hover{opacity:.9;}
+  .copy-flash{font-size:12px;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-inline-start:4px;display:none;}
+
+  .ai-section{margin-top:30px;}
+  .ai-toggle{width:100%;text-align:right;background:transparent;border:1px dashed var(--line);color:var(--text-dim);padding:14px 16px;border-radius:var(--radius);font-family:inherit;font-size:14px;cursor:pointer;}
+  .ai-toggle:hover{border-color:var(--violet);color:var(--text);}
+  .ai-box{display:none;margin-top:12px;}
+  .ai-box.active{display:block;}
+  textarea{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:var(--radius);padding:12px 14px;font-family:'Tajawal',sans-serif;font-size:14.5px;min-height:90px;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--violet);}
+  .ai-submit{margin-top:10px;background:var(--violet);color:#0B1016;border:none;padding:10px 20px;border-radius:var(--radius);font-family:'Tajawal',sans-serif;font-weight:700;font-size:14px;cursor:pointer;}
+  .ai-submit:disabled{opacity:.5;cursor:default;}
+  .ai-answer{margin-top:14px;border:1px dashed var(--violet);border-radius:var(--radius);padding:16px;background:var(--panel-2);display:none;}
+  .ai-answer.active{display:block;}
+  .ai-answer .label{font-size:11.5px;color:var(--violet);font-family:'JetBrains Mono',monospace;margin-bottom:10px;}
+  .ai-answer .content{font-size:14.5px;line-height:1.8;white-space:pre-wrap;}
+  .ai-loading{font-size:13.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .ai-note{font-size:11.5px;color:var(--text-dim);margin-top:10px;line-height:1.6;}
+
+  .section-block{margin-top:34px;}
+  .section-head h2{font-size:17px;margin:0 0 6px;}
+  .section-sub{font-size:13px;color:var(--text-dim);line-height:1.7;margin:0 0 16px;}
+  .note-inline{color:var(--cyan);}
+  .form-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 16px;}
+  .status-msg{font-size:12.5px;color:var(--cyan);font-family:'JetBrains Mono',monospace;margin-inline-start:10px;}
+  .list-head{display:flex;justify-content:space-between;align-items:center;margin:22px 0 10px;flex-wrap:wrap;gap:8px;}
+  .count-tag{font-size:12.5px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;}
+  .empty-msg{font-size:13.5px;color:var(--text-dim);padding:14px 0;}
+  .entry-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+  .entry-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+  .entry-title{font-size:15px;font-weight:700;}
+  .entry-badge{font-family:'JetBrains Mono',monospace;font-size:10.5px;background:rgba(240,166,58,.15);color:var(--amber);padding:2px 8px;border-radius:2px;white-space:nowrap;}
+  .entry-cat-tag{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);margin-bottom:8px;}
+  .entry-field-label{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin:10px 0 4px;}
+  .entry-field-text{font-size:13.5px;line-height:1.75;white-space:pre-wrap;color:var(--text);}
+  .entry-meta{font-size:11px;color:var(--text-dim);font-family:'JetBrains Mono',monospace;margin-top:12px;}
+  .entry-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .entry-actions .btn{font-size:12px;padding:7px 12px;}
+  .entry-actions .btn.danger:hover{border-color:var(--red);color:var(--red);}
+  .privacy-note{font-size:12px;color:var(--amber);background:rgba(240,166,58,.08);border:1px solid rgba(240,166,58,.3);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px;line-height:1.7;}
+
+  footer{margin-top:40px;text-align:center;color:var(--text-dim);font-size:11.5px;font-family:'JetBrains Mono',monospace;}
+
+  #printArea{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printArea, #printArea *{visibility:visible;}
+    #printArea{display:block !important;position:absolute;top:0;right:0;left:0;width:100%;padding:20px;}
+    body{background:#fff;color:#000;}
+  }
+  .pr-h{font-size:19px;font-weight:900;margin:0 0 4px;}
+  .pr-sub{font-size:12px;color:#555;margin-bottom:18px;}
+  .pr-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;font-size:13px;margin-bottom:16px;border:1px solid #ccc;padding:12px;border-radius:3px;}
+  .pr-meta div span{color:#666;font-size:11px;display:block;}
+  .pr-section-title{font-size:12px;font-weight:700;color:#333;border-bottom:1px solid #ccc;padding-bottom:4px;margin:16px 0 8px;}
+  .pr-step{font-size:13px;margin-bottom:6px;line-height:1.6;}
+  .pr-diag{border:1px solid #999;border-radius:3px;padding:12px;margin-top:8px;}
+  .pr-diag h3{margin:0 0 8px;font-size:15px;}
+
+  html[dir="ltr"] body{text-align:left;}
+  html[dir="ltr"] .card-btn, html[dir="ltr"] .opt-btn, html[dir="ltr"] .field input,
+  html[dir="ltr"] .field select, html[dir="ltr"] textarea{text-align:left;}
+
+  /* ---------------- AI ASSISTANT - PREMIUM DARK UI ---------------- */
+
+.ai-prepared{
+  margin-top: 14px;
+  padding: 18px;
+  border: 1px solid #2A3A4C;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #111A24 0%, #0D141D 100%);
+  box-shadow: 0 10px 30px rgba(0,0,0,.22);
+}
+
+.ai-prepared p{
+  margin: 0 0 12px;
+}
+
+.ai-prepared > p:first-child{
+  color: #E7EEF5;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ai-prompt-preview{
+  width: 100%;
+  min-height: 220px;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 14px;
+  border: 1px solid #2B3A49;
+  border-radius: 10px;
+  background: #0A1017;
+  color: #DDE7F0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  outline: none;
+}
+
+.ai-prompt-preview:focus{
+  border-color: #4C6A85;
+}
+
+.ai-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ai-action-btn{
+  appearance: none;
+  border: 1px solid #314456;
+  border-radius: 10px;
+  padding: 10px 16px;
+  background: #182330;
+  color: #E7EEF5;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: .18s ease;
+}
+
+.ai-action-btn:hover{
+  background: #213142;
+  border-color: #4A647C;
+  transform: translateY(-1px);
+}
+
+.ai-action-btn:active{
+  transform: translateY(0);
+}
+
+#copyAiPrompt{
+  background: #1C2A38;
+}
+
+#openChatGPT{
+  background: #17251F;
+  border-color: #345347;
+}
+
+#openClaude{
+  background: #282019;
+  border-color: #584638;
+}
+
+.ai-external-note{
+  margin-top: 12px !important;
+  color: #8FA1B3 !important;
+  font-size: 11px !important;
+  line-height: 1.6;
+}
+
+
+</style>
+</head>
+<body>
+<div class="wrap" id="appWrap">
+
+  <header>
+    <div class="eyebrow-row">
+      <div class="eyebrow-left">
+        <span class="dot"></span>
+        <span class="station-id">EARTH STATION &middot; DSNG SUPPORT CONSOLE</span>
+      </div>
+      <div class="header-right">
+        <span class="version-tag" data-i18n="versionTag"></span>
+        <div class="lang-toggle">
+          <button id="langArBtn" class="active">AR</button>
+          <button id="langEnBtn">EN</button>
+        </div>
+      </div>
+    </div>
+    <h1 data-i18n="title"></h1>
+    <p class="sub" data-i18n="subtitle"></p>
+
+    <div class="info-bar">
+      <div class="field">
+        <label data-i18n="engNameLabel"></label>
+        <input type="text" id="engName" data-i18n-ph="engNamePh">
+      </div>
+      <div class="field">
+        <label data-i18n="stationLabel"></label>
+        <input type="text" id="stationName" data-i18n-ph="stationPh">
+      </div>
+    </div>
+
+    <details class="about">
+      <summary data-i18n="aboutSummary"></summary>
+      <div class="about-body">
+        <h4 data-i18n="aboutGoalH"></h4>
+        <p data-i18n="aboutGoalP"></p>
+        <h4 data-i18n="aboutMethodH"></h4>
+        <p data-i18n="aboutMethodP"></p>
+        <h4 data-i18n="aboutAiH"></h4>
+        <p data-i18n="aboutAiP"></p>
+      </div>
+    </details>
+  </header>
+
+  <div class="grid" id="homeGrid"></div>
+  <p class="stats-line mono" id="statsLine"></p>
+
+  <div class="panel" id="flowPanel">
+    <div class="panel-top">
+      <span class="cat-tag mono" id="catTag"></span>
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn" id="backBtn" data-i18n="backBtn"></button>
+        <button class="icon-btn" id="homeBtn" data-i18n="homeBtn"></button>
+      </div>
+    </div>
+    <div class="trail" id="trail" style="display:none;"></div>
+    <div id="stepArea"></div>
+  </div>
+
+  <div class="ai-section">
+    <button class="ai-toggle" id="aiToggle" data-i18n="aiToggle"></button>
+    <div class="ai-box" id="aiBox">
+      <textarea id="aiInput" data-i18n-ph="aiInputPh"></textarea>
+      <br>
+      <button class="ai-submit" id="aiSubmit" data-i18n="aiSubmit"></button>
+      <div class="ai-answer" id="aiAnswer">
+        <div class="label" data-i18n="aiAnswerLabel"></div>
+        <div class="content" id="aiContent"></div>
+      </div>
+      <p class="ai-note" data-i18n="aiNote"></p>
+    </div>
+  </div>
+
+  <div class="section-block" id="kbSection">
+    <div class="section-head">
+      <h2 data-i18n="kbHeader"></h2>
+      <p class="section-sub" id="kbSub"></p>
+    </div>
+    <div class="form-panel">
+      <div class="info-bar" style="margin-top:0;">
+        <div class="field">
+          <label data-i18n="kbTitleLabel"></label>
+          <input id="kbTitle" type="text" data-i18n-ph="kbTitlePh">
+        </div>
+        <div class="field">
+          <label data-i18n="kbCatLabel"></label>
+          <select id="kbCategory"></select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label data-i18n="kbCausesLabel"></label>
+        <textarea id="kbCauses" data-i18n-ph="kbCausesPh"></textarea>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label data-i18n="kbFixLabel"></label>
+        <textarea id="kbFix" data-i18n-ph="kbFixPh"></textarea>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label data-i18n="kbNotesLabel"></label>
+        <textarea id="kbNotes" style="min-height:60px;" data-i18n-ph="kbNotesPh"></textarea>
+      </div>
+      <button class="btn primary" id="kbSaveBtn" style="margin-top:14px;" data-i18n="kbSaveBtn"></button>
+      <span class="status-msg" id="kbStatus"></span>
+    </div>
+    <div class="list-head">
+      <span class="count-tag mono" id="kbCount"></span>
+      <button class="icon-btn" id="kbExportAllBtn" data-i18n="kbExportAllBtn"></button>
+    </div>
+    <div id="kbList"></div>
+  </div>
+
+  <div class="section-block" id="expertSection">
+    <div class="section-head">
+      <h2 data-i18n="expHeader"></h2>
+      <p class="section-sub" id="expSub"></p>
+    </div>
+    <div class="privacy-note" id="expPrivacyNote"></div>
+    <div class="form-panel">
+      <div class="info-bar" style="margin-top:0;">
+        <div class="field">
+          <label data-i18n="expNameLabel"></label>
+          <input id="expName" type="text" data-i18n-ph="expNamePh">
+        </div>
+        <div class="field">
+          <label data-i18n="expSpecLabel"></label>
+          <input id="expSpec" type="text" data-i18n-ph="expSpecPh">
+        </div>
+      </div>
+      <div class="info-bar" style="margin-top:10px;">
+        <div class="field">
+          <label data-i18n="expEmailLabel"></label>
+          <input id="expEmail" type="text" data-i18n-ph="expEmailPh">
+        </div>
+        <div class="field">
+          <label data-i18n="expExtLabel"></label>
+          <input id="expExt" type="text" data-i18n-ph="expExtPh">
+        </div>
+      </div>
+      <div class="field" style="margin-top:10px;">
+        <label data-i18n="expNotesLabel"></label>
+        <textarea id="expNotes" style="min-height:55px;" data-i18n-ph="expNotesPh"></textarea>
+      </div>
+      <button class="btn primary" id="expSaveBtn" style="margin-top:14px;" data-i18n="expSaveBtn"></button>
+      <span class="status-msg" id="expStatus"></span>
+    </div>
+    <div class="list-head">
+      <span class="count-tag mono" id="expCount"></span>
+    </div>
+    <div id="expList"></div>
+  </div>
+
+  <footer id="footerText"></footer>
+</div>
+
+<div id="printArea"></div>
+
+<script>
+const APP_DATA = {"ar": {"categories": [{"id": "no_signal", "icon": "nosignal", "title": "فقدان كامل للإشارة", "desc": "لا يوجد Carrier إطلاقاً على المستقبل", "root": "ns1"}, {"id": "poor_quality", "icon": "wave", "title": "جودة إشارة ضعيفة / تقطيع", "desc": "Eb/No منخفض، أخطاء بت، تجميد بالصورة", "root": "pq1"}, {"id": "cross_pol", "icon": "crosspol", "title": "استقطاب متعامد سيء", "desc": "Cross-pol isolation ضعيف", "root": "cp1"}, {"id": "buc_hpa", "icon": "amp", "title": "تنبيه BUC / HPA", "desc": "Alarm على وحدة التضخيم", "root": "bh1"}, {"id": "pointing", "icon": "dish", "title": "مشاكل توجيه الهوائي", "desc": "صعوبة إيجاد القمر أو فقدان التتبع", "root": "ap1"}, {"id": "encoding", "icon": "video", "title": "مشاكل الترميز والفيديو", "desc": "تقطع أو تجمّد بالصورة رغم سلامة الإشارة", "root": "ev1"}], "nodes": {"ns1": {"q": "هل يظهر أي إرسال فعلي من المودم/المشفر (مؤشر Tx Active أو Carrier ON)؟", "o": [{"l": "نعم", "n": "ns2"}, {"l": "لا", "n": "ns_r1"}]}, "ns_r1": {"r": 1, "sev": "critical", "title": "لا يوجد إرسال من المودم", "steps": ["تحقق من تشغيل الجهاز والتغذية الكهربائية له", "تأكد من توصيل كابل الدخل من الكاميرا/المصدر بشكل صحيح", "تحقق من إعداد Carrier ON بواجهة المودم"]}, "ns2": {"q": "هل تعطي وحدة BUC / HPA قراءة طاقة خرج (Output Power) طبيعية؟", "o": [{"l": "نعم", "n": "ns3"}, {"l": "لا", "n": "ns_r2"}]}, "ns_r2": {"r": 1, "sev": "critical", "title": "لا توجد طاقة خرج من BUC/HPA", "steps": ["تحقق من التغذية الكهربائية ووصلة 10MHz Reference بين المودم والـ BUC", "افحص الفيوز أو قاطع الحماية", "إذا لم تعد الوحدة للعمل استبدلها بوحدة احتياط إن توفرت"]}, "ns3": {"q": "هل تم التأكد أن الهوائي موجّه على القمر الصناعي الصحيح (تأكيد عبر مستقبل البيكون أو قراءة Az/El)؟", "o": [{"l": "نعم", "n": "ns4"}, {"l": "لا", "n": "ns_r3"}]}, "ns_r3": {"r": 1, "sev": "warning", "title": "احتمال خطأ بتوجيه الهوائي", "steps": ["نفّذ عملية Peaking باستخدام بيكون القمر الصناعي المستهدف", "تأكد من صحة زوايا Az/El/Pol المحسوبة لموقعك الحالي"]}, "ns4": {"q": "هل جميع معاملات الإرسال (تردد Uplink، Symbol Rate، الاستقطاب) مطابقة تماماً لما هو محجوز مع مشغل القمر الصناعي؟", "o": [{"l": "نعم", "n": "ns_r5"}, {"l": "لا", "n": "ns_r4"}]}, "ns_r4": {"r": 1, "sev": "warning", "title": "عدم تطابق إعدادات الإرسال", "steps": ["راجع جدول الحجز الفني (Booking Sheet) الصادر من مشغل القمر الصناعي", "طابق كل الإعدادات بدقة على واجهة المودم"]}, "ns_r5": {"r": 1, "sev": "info", "title": "المعدات لديك سليمة — يتطلب تنسيقاً خارجياً", "steps": ["تواصل فوراً مع مشغل القمر الصناعي (Satellite Operator) للتأكد من استقبال الحامل من جهتهم", "المشكلة على الأغلب بجهة الاستقبال بالتيليبورت وليست بمعداتك"]}, "pq1": {"q": "هل قيمة Eb/No أو C/N المعروضة على المودم أقل من الحد الطبيعي المعتاد؟", "o": [{"l": "نعم", "n": "pq2"}, {"l": "لا", "n": "pq_r1"}]}, "pq_r1": {"r": 1, "sev": "info", "title": "مستوى الإشارة سليم من حيث القوة", "steps": ["المشكلة غالباً ليست بمستوى الاستقبال بل بتطابق إعدادات FEC/Modulation بين طرفي الإرسال والاستقبال", "تحقق من عدم وجود خطأ بتخصيص الـ Multiplexing"]}, "pq2": {"q": "هل الجو حالياً ممطر أو تشوبه سحب كثيفة فوق موقعك أو فوق التيليبورت المستقبِل؟", "o": [{"l": "نعم", "n": "pq_r2"}, {"l": "لا", "n": "pq3"}]}, "pq_r2": {"r": 1, "sev": "warning", "title": "تراجع بسبب الأمطار (Rain Fade)", "steps": ["غالباً وضع مؤقت، راقب الحالة حتى ينقشع الجو", "إذا كان النظام يدعم ATPC تأكد من تفعيله لتعويض الفقد تلقائياً", "تجنب رفع الطاقة يدوياً فوق الحد المسموح لتفادي التداخل مع الأقمار المجاورة"]}, "pq3": {"q": "هل تحسّنت القيمة بشكل ملحوظ عند إجراء ضبط سريع (Peaking) بزاوية بسيطة للهوائي؟", "o": [{"l": "نعم", "n": "pq_r3"}, {"l": "لا", "n": "pq4"}]}, "pq_r3": {"r": 1, "sev": "warning", "title": "انحراف بسيط بتوجيه الهوائي", "steps": ["أعد عملية Peaking كاملة (Az/El/Pol) باستخدام بيكون القمر الصناعي", "تحقق من إحكام ربط قاعدة الهوائي ومحركات التوجيه"]}, "pq4": {"q": "هل يظهر بمحلل الطيف (Spectrum Analyzer) أي حمل أو نمط غير معتاد قريب من التردد المستخدم؟", "o": [{"l": "نعم", "n": "pq_r4"}, {"l": "لا", "n": "pq_r5"}]}, "pq_r4": {"r": 1, "sev": "critical", "title": "تداخل ترددي (Interference)", "steps": ["التقط صورة واضحة للطيف وسجّل التردد والعرض المتأثر", "بلّغ مشغل القمر الصناعي فوراً لتحديد المصدر", "أوقف إرسالك مؤقتاً وراقب هل يستمر النمط — للتأكد أن المصدر ليس معداتك"]}, "pq_r5": {"r": 1, "sev": "warning", "title": "احتمال عطل بسلسلة الاستقبال", "steps": ["افحص/قارن بـ LNB بديل — احتمال ارتفاع Noise Figure", "افحص الكابلات والموصلات بحثاً عن تآكل أو رطوبة", "تأكد من سلامة الـ Feed وعدم دخول ماء إليه"]}, "cp1": {"q": "هل تم عمل Cross-pol Optimization لضبط زاوية الاستقطاب عند أول نصب للهوائي؟", "o": [{"l": "نعم", "n": "cp2"}, {"l": "لا", "n": "cp_r1"}]}, "cp_r1": {"r": 1, "sev": "warning", "title": "لم يتم ضبط الاستقطاب بعد", "steps": ["نفّذ عملية Cross-pol Optimization باستخدام بيكون القمر الصناعي", "أو بالتنسيق المباشر مع مهندسي التيليبورت لضبط الزاوية بدقة"]}, "cp2": {"q": "هل تعرّض الهوائي لرياح قوية، أو تم نقله أو صيانته مؤخراً؟", "o": [{"l": "نعم", "n": "cp_r2"}, {"l": "لا", "n": "cp3"}]}, "cp_r2": {"r": 1, "sev": "warning", "title": "انزياح ميكانيكي محتمل بزاوية الاستقطاب", "steps": ["افحص تثبيت الهوائي والـ Feed ميكانيكياً", "أعد عملية Cross-pol Optimization من جديد"]}, "cp3": {"q": "هل الـ Feed أو الـ OMT سليم ظاهرياً (لا رطوبة أو صدأ أو تلف)؟", "o": [{"l": "نعم", "n": "cp_r4"}, {"l": "لا", "n": "cp_r3"}]}, "cp_r3": {"r": 1, "sev": "critical", "title": "تلف محتمل بالـ OMT أو الـ Feed", "steps": ["افحص الـ OMT جيداً وابحث عن رطوبة داخلية أو صدأ بالموصلات", "استبدله إذا لزم — فهو مكوّن حساس يؤثر مباشرة على عزل الاستقطاب"]}, "cp_r4": {"r": 1, "sev": "info", "title": "المعدات تبدو سليمة — يحتاج تنسيقاً خارجياً", "steps": ["نسّق مع مشغل القمر الصناعي أو التيليبورت للتحقق من القياس من جهتهم", "المشكلة المحتملة بالـ Transponder نفسه أو تداخل من قمر مجاور"]}, "bh1": {"q": "ما نوع التنبيه الظاهر على وحدة BUC / HPA؟", "o": [{"l": "حرارة عالية (Over Temperature)", "n": "bh_r1"}, {"l": "تيار زائد (Over Current)", "n": "bh_r2"}, {"l": "تنبيه عام / Mute غير محدد", "n": "bh_r3"}]}, "bh_r1": {"r": 1, "sev": "warning", "title": "ارتفاع درجة حرارة الوحدة", "steps": ["تأكد من عمل مراوح التبريد وعدم انسداد فتحات التهوية", "في الطقس الحار جداً، خفّف مؤقتاً مستوى الطاقة إن سمح النظام بذلك"]}, "bh_r2": {"r": 1, "sev": "critical", "title": "تيار زائد — احتمال عطل داخلي", "steps": ["أوقف تشغيل الوحدة فوراً لتفادي تفاقم الضرر", "لا تُعد تشغيلها قبل الفحص الفني الكامل", "فعّل وحدة الاحتياط (Redundant Unit) إن كانت متوفرة بالنظام"]}, "bh_r3": {"r": 1, "sev": "warning", "title": "تنبيه عام غير محدد", "steps": ["نفّذ إعادة تشغيل كاملة للوحدة (Power Cycle)", "إذا تكرر التنبيه بعد إعادة التشغيل، ضعها جانباً للصيانة المتخصصة واستخدم البديل إن وجد"]}, "ap1": {"q": "ما وصف الحالة؟", "o": [{"l": "نصب أو تركيب جديد للهوائي", "n": "ap2"}, {"l": "هوائي كان يعمل بشكل طبيعي ثم توقف", "n": "ap4"}]}, "ap2": {"q": "هل تم إدخال إحداثيات الموقع (GPS — خط الطول والعرض) بدقة في متحكم الهوائي (ACU)؟", "o": [{"l": "نعم", "n": "ap_r_ready"}, {"l": "لا", "n": "ap_r1"}]}, "ap_r1": {"r": 1, "sev": "warning", "title": "إحداثيات الموقع غير دقيقة", "steps": ["أدخل إحداثيات GPS الدقيقة للموقع أولاً", "أعد حساب زوايا Azimuth / Elevation / Polarization بناءً عليها قبل بدء التوجيه"]}, "ap_r_ready": {"r": 1, "sev": "info", "title": "جاهز لبدء التوجيه اليدوي", "steps": ["ابدأ Peaking يدوي باستخدام إشارة بيكون القمر الصناعي", "حرّك الهوائي ببطء على محوري Azimuth وElevation لإيجاد أعلى قراءة إشارة", "اضبط الاستقطاب (Polarization) بدقة بعد إيجاد أعلى إشارة"]}, "ap4": {"q": "هل حدثت رياح قوية استثنائية، أو أي اهتزاز/صدمة بالموقع مؤخراً؟", "o": [{"l": "نعم", "n": "ap_r2"}, {"l": "لا", "n": "ap5"}]}, "ap_r2": {"r": 1, "sev": "warning", "title": "احتمال انزياح ميكانيكي بالتوجيه", "steps": ["افحص القاعدة والمثبتات الميكانيكية للهوائي بحثاً عن أي ارتخاء", "أعد معايرة التوجيه (Re-peaking) على بيكون القمر الصناعي"]}, "ap5": {"q": "هل يستجيب محرك التوجيه (Actuator) لأوامر متحكم الهوائي (ACU) بشكل طبيعي؟", "o": [{"l": "نعم", "n": "ap_r4"}, {"l": "لا", "n": "ap_r3"}]}, "ap_r3": {"r": 1, "sev": "critical", "title": "عطل محتمل بمحرك التوجيه أو وحدة التحكم", "steps": ["افحص توصيلات المحرك والتغذية الكهربائية له", "تحقق من سجل أخطاء الـ ACU", "قد يحتاج المحرك أو وحدة التحكم للاستبدال أو الصيانة الفنية"]}, "ap_r4": {"r": 1, "sev": "info", "title": "فقدان المعايرة (Calibration) على الأرجح", "steps": ["أعد معايرة النظام بالكامل (Full Calibration) من قائمة إعدادات الـ ACU", "بعدها نفّذ Peaking يدوي دقيق على بيكون القمر للتأكد من استعادة أفضل إشارة"]}, "ev1": {"q": "هل الفيديو الداخل للمشفر (من الكاميرا) سليم وواضح على شاشة المونيتور المحلي؟", "o": [{"l": "نعم", "n": "ev2"}, {"l": "لا", "n": "ev_r1"}]}, "ev_r1": {"r": 1, "sev": "warning", "title": "المشكلة من مصدر الفيديو قبل المشفر", "steps": ["تحقق من كابل SDI/HDMI ومخرج الكاميرا", "جرّب مصدر فيديو بديل للتأكد من عزل المشكلة"]}, "ev2": {"q": "هل إعدادات الترميز (Bitrate، Resolution، GOP) بالمشفر مطابقة لما يتوقعه جهاز الاستقبال بالمحطة الرئيسية؟", "o": [{"l": "نعم", "n": "ev3"}, {"l": "لا", "n": "ev_r2"}]}, "ev_r2": {"r": 1, "sev": "warning", "title": "عدم تطابق إعدادات الترميز", "steps": ["نسّق مع غرفة التحكم الرئيسية (MCR) لمطابقة إعدادات Bitrate/Resolution/GOP/Profile بين الطرفين"]}, "ev3": {"q": "هل يظهر تقطّع أو تجمّد بالصورة رغم أن قيمة الإشارة (Eb/No) طبيعية على المودم؟", "o": [{"l": "نعم", "n": "ev_r3"}, {"l": "لا", "n": "ev_r4"}]}, "ev_r3": {"r": 1, "sev": "critical", "title": "احتمال عطل داخلي بالمشفر أو تشبّع بالشبكة", "steps": ["أعد تشغيل المشفر (Power Cycle)", "تحقق من درجة حرارة الجهاز والتهوية", "إذا استمرت المشكلة جرّب مشفراً احتياطياً"]}, "ev_r4": {"r": 1, "sev": "info", "title": "الإرسال يبدو سليماً من طرفك", "steps": ["نسّق مع غرفة التحكم الرئيسية للتأكد من استقبال الفيديو من جهتهم بجودة سليمة", "المشكلة المحتملة بجهة الاستقبال أو بشبكة التوزيع الداخلية لديهم"]}}}, "en": {"categories": [{"id": "no_signal", "icon": "nosignal", "title": "Total Signal Loss", "desc": "No carrier at all on the receiver", "root": "ns1"}, {"id": "poor_quality", "icon": "wave", "title": "Poor Signal Quality / Dropouts", "desc": "Low Eb/No, bit errors, frozen picture", "root": "pq1"}, {"id": "cross_pol", "icon": "crosspol", "title": "Poor Cross-Polarization", "desc": "Weak cross-pol isolation", "root": "cp1"}, {"id": "buc_hpa", "icon": "amp", "title": "BUC / HPA Alarm", "desc": "Alarm on the power amplifier unit", "root": "bh1"}, {"id": "pointing", "icon": "dish", "title": "Antenna Pointing Issues", "desc": "Difficulty finding the satellite or tracking loss", "root": "ap1"}, {"id": "encoding", "icon": "video", "title": "Encoding / Video Issues", "desc": "Picture breakup or freezing despite a healthy signal", "root": "ev1"}], "nodes": {"ns1": {"q": "Is the modulator/encoder actually transmitting (Tx Active / Carrier ON)?", "o": [{"l": "Yes", "n": "ns2"}, {"l": "No", "n": "ns_r1"}]}, "ns_r1": {"r": 1, "sev": "critical", "title": "No transmission from the modulator", "steps": ["Check the unit is powered and receiving mains power", "Confirm the input cable from the camera/source is properly connected", "Check the Carrier ON setting on the modulator interface"]}, "ns2": {"q": "Does the BUC / HPA show a normal output power reading?", "o": [{"l": "Yes", "n": "ns3"}, {"l": "No", "n": "ns_r2"}]}, "ns_r2": {"r": 1, "sev": "critical", "title": "No output power from BUC/HPA", "steps": ["Check power supply and the 10MHz reference link between modulator and BUC", "Check the fuse or protection breaker", "Swap in a redundant unit if the unit will not recover"]}, "ns3": {"q": "Has it been confirmed the antenna is pointed at the correct satellite (beacon receiver or Az/El reading)?", "o": [{"l": "Yes", "n": "ns4"}, {"l": "No", "n": "ns_r3"}]}, "ns_r3": {"r": 1, "sev": "warning", "title": "Likely antenna pointing error", "steps": ["Run a peaking procedure using the target satellite's beacon", "Verify the Az/El/Pol angles calculated for your location"]}, "ns4": {"q": "Are all transmission parameters (uplink frequency, symbol rate, polarization) an exact match for the satellite operator's booking?", "o": [{"l": "Yes", "n": "ns_r5"}, {"l": "No", "n": "ns_r4"}]}, "ns_r4": {"r": 1, "sev": "warning", "title": "Transmission settings mismatch", "steps": ["Review the technical booking sheet issued by the satellite operator", "Match every setting precisely on the modulator interface"]}, "ns_r5": {"r": 1, "sev": "info", "title": "Your equipment looks healthy -- coordination needed", "steps": ["Contact the satellite operator immediately to confirm carrier reception on their side", "The fault is most likely on the receiving teleport side, not your equipment"]}, "pq1": {"q": "Is the Eb/No or C/N value on the modulator below the usual normal range?", "o": [{"l": "Yes", "n": "pq2"}, {"l": "No", "n": "pq_r1"}]}, "pq_r1": {"r": 1, "sev": "info", "title": "Signal strength is healthy", "steps": ["The issue is likely not signal level but FEC/Modulation mismatch between ends", "Check for an incorrect multiplexing assignment"]}, "pq2": {"q": "Is it currently raining or heavily overcast at your site or at the receiving teleport?", "o": [{"l": "Yes", "n": "pq_r2"}, {"l": "No", "n": "pq3"}]}, "pq_r2": {"r": 1, "sev": "warning", "title": "Rain fade", "steps": ["Usually temporary -- monitor until conditions clear", "If ATPC is supported, confirm it is enabled to auto-compensate", "Avoid manually raising power beyond the allowed limit (adjacent-satellite interference risk)"]}, "pq3": {"q": "Did a quick re-peak of the antenna noticeably improve the reading?", "o": [{"l": "Yes", "n": "pq_r3"}, {"l": "No", "n": "pq4"}]}, "pq_r3": {"r": 1, "sev": "warning", "title": "Slight antenna pointing drift", "steps": ["Redo a full peaking pass (Az/El/Pol) using the satellite beacon", "Check the antenna base and drive mounts are properly tightened"]}, "pq4": {"q": "Does the spectrum analyzer show any unusual carrier/pattern near your frequency?", "o": [{"l": "Yes", "n": "pq_r4"}, {"l": "No", "n": "pq_r5"}]}, "pq_r4": {"r": 1, "sev": "critical", "title": "RF interference", "steps": ["Capture a clear spectrum screenshot and log the affected frequency/bandwidth", "Report to the satellite operator immediately to identify the source", "Briefly stop your own transmission to confirm you are not the source"]}, "pq_r5": {"r": 1, "sev": "warning", "title": "Likely receive-chain degradation", "steps": ["Swap in a spare LNB for comparison -- possible high noise figure", "Inspect cables and connectors for corrosion or moisture", "Confirm the feed is sealed and no water has entered it"]}, "cp1": {"q": "Was Cross-pol Optimization performed when the antenna was first installed?", "o": [{"l": "Yes", "n": "cp2"}, {"l": "No", "n": "cp_r1"}]}, "cp_r1": {"r": 1, "sev": "warning", "title": "Polarization was never optimized", "steps": ["Perform Cross-pol Optimization using the satellite beacon", "Or coordinate directly with teleport engineers to fine-tune the angle"]}, "cp2": {"q": "Was the antenna exposed to strong wind, or moved/serviced recently?", "o": [{"l": "Yes", "n": "cp_r2"}, {"l": "No", "n": "cp3"}]}, "cp_r2": {"r": 1, "sev": "warning", "title": "Likely mechanical shift in polarization angle", "steps": ["Inspect the antenna and feed mechanical mounting", "Redo Cross-pol Optimization from scratch"]}, "cp3": {"q": "Does the feed / OMT look physically sound (no moisture or corrosion)?", "o": [{"l": "Yes", "n": "cp_r4"}, {"l": "No", "n": "cp_r3"}]}, "cp_r3": {"r": 1, "sev": "critical", "title": "Possible OMT/feed damage", "steps": ["Inspect the OMT closely for internal moisture or corroded connectors", "Replace if needed -- it directly affects polarization isolation"]}, "cp_r4": {"r": 1, "sev": "info", "title": "Equipment looks healthy -- external coordination needed", "steps": ["Coordinate with the satellite operator or teleport to verify from their side", "The issue may be with the transponder itself or an adjacent-satellite conflict"]}, "bh1": {"q": "What type of alarm is showing on the BUC / HPA unit?", "o": [{"l": "Over Temperature", "n": "bh_r1"}, {"l": "Over Current", "n": "bh_r2"}, {"l": "General/unspecified Mute", "n": "bh_r3"}]}, "bh_r1": {"r": 1, "sev": "warning", "title": "Unit overheating", "steps": ["Confirm cooling fans are running and vents are not obstructed", "In extreme heat, temporarily reduce output power if the system allows"]}, "bh_r2": {"r": 1, "sev": "critical", "title": "Overcurrent -- likely internal fault", "steps": ["Power the unit off immediately to prevent further damage", "Do not re-power before a full technical inspection", "Switch to the redundant unit if available"]}, "bh_r3": {"r": 1, "sev": "warning", "title": "Unspecified general alarm", "steps": ["Perform a full power cycle of the unit", "If the alarm recurs, set it aside for specialized maintenance and use the spare"]}, "ap1": {"q": "Which best describes the situation?", "o": [{"l": "New antenna installation", "n": "ap2"}, {"l": "Antenna was working, then stopped", "n": "ap4"}]}, "ap2": {"q": "Have accurate GPS site coordinates been entered into the antenna controller (ACU)?", "o": [{"l": "Yes", "n": "ap_r_ready"}, {"l": "No", "n": "ap_r1"}]}, "ap_r1": {"r": 1, "sev": "warning", "title": "Site coordinates are inaccurate", "steps": ["Enter accurate GPS coordinates for the site first", "Recompute Azimuth / Elevation / Polarization before starting pointing"]}, "ap_r_ready": {"r": 1, "sev": "info", "title": "Ready to begin manual pointing", "steps": ["Begin manual peaking using the satellite beacon signal", "Slowly sweep Azimuth and Elevation to find the peak reading", "Fine-tune polarization after finding the peak signal"]}, "ap4": {"q": "Was there an exceptionally strong wind event, or any shock/vibration at the site recently?", "o": [{"l": "Yes", "n": "ap_r2"}, {"l": "No", "n": "ap5"}]}, "ap_r2": {"r": 1, "sev": "warning", "title": "Likely mechanical shift in pointing", "steps": ["Inspect the base and mechanical mounts for looseness", "Re-peak the antenna on the satellite beacon"]}, "ap5": {"q": "Does the drive actuator respond normally to commands from the antenna controller (ACU)?", "o": [{"l": "Yes", "n": "ap_r4"}, {"l": "No", "n": "ap_r3"}]}, "ap_r3": {"r": 1, "sev": "critical", "title": "Likely actuator or controller fault", "steps": ["Check actuator wiring and power supply", "Check the ACU's error log", "The actuator or controller may need replacement or service"]}, "ap_r4": {"r": 1, "sev": "info", "title": "Likely lost calibration", "steps": ["Run a full system re-calibration from the ACU settings menu", "Then perform a precise manual peak on the satellite beacon"]}, "ev1": {"q": "Is the video feeding the encoder (from the camera) clean on the local monitor?", "o": [{"l": "Yes", "n": "ev2"}, {"l": "No", "n": "ev_r1"}]}, "ev_r1": {"r": 1, "sev": "warning", "title": "The issue is upstream of the encoder", "steps": ["Check the SDI/HDMI cable and the camera output", "Try a different video source to isolate the fault"]}, "ev2": {"q": "Do the encoder's settings (bitrate, resolution, GOP) match what the receiving decoder at master control expects?", "o": [{"l": "Yes", "n": "ev3"}, {"l": "No", "n": "ev_r2"}]}, "ev_r2": {"r": 1, "sev": "warning", "title": "Encoding settings mismatch", "steps": ["Coordinate with master control (MCR) to match bitrate/resolution/GOP/profile on both ends"]}, "ev3": {"q": "Is there breakup or freezing in the picture even though the modulator's Eb/No reading is normal?", "o": [{"l": "Yes", "n": "ev_r3"}, {"l": "No", "n": "ev_r4"}]}, "ev_r3": {"r": 1, "sev": "critical", "title": "Likely internal encoder fault or network saturation", "steps": ["Power-cycle the encoder", "Check the unit's temperature and ventilation", "Try a backup encoder if the issue persists"]}, "ev_r4": {"r": 1, "sev": "info", "title": "Transmission looks healthy on your end", "steps": ["Coordinate with master control to confirm they are receiving good quality video", "The issue is most likely on the receiving side or their internal distribution network"]}}}};
+
+const STR = {"ar": {"versionTag": "الإصدار 1.1 · نموذج داخلي", "title": "مساعد استكشاف أعطال DSNG", "subtitle": "أداة دعم فني تفاعلية لتوحيد وتسريع خطوات التشخيص الأولي للأعطال الشائعة في محطات الأرض وأنظمة DSNG، مبنية على تسلسل الفحص الذي يتبعه المهندس المتمرّس ميدانياً.", "engNameLabel": "اسم المهندس المناوب", "engNamePh": "اختياري — لتوثيق التقرير", "stationLabel": "المحطة / الموقع / رقم المهمة", "stationPh": "اختياري — لتوثيق التقرير", "aboutSummary": "عن هذه الأداة ومنهجية العمل", "aboutGoalH": "الهدف", "aboutGoalP": "توحيد خطوات التشخيص الأولي للأعطال المتكررة بين جميع أفراد الفريق بغض النظر عن مستوى الخبرة، وتقليل زمن التوقف (MTTR)، وتوثيق كل حالة بشكل منظم لأغراض المتابعة والتدريب.", "aboutMethodH": "منهجية العمل", "aboutMethodP": "كل مسار تشخيصي هو شجرة قرار مبنية على أسئلة متسلسلة تحاكي تفكير مهندس خبير أثناء الفحص الميداني الفعلي، وتنتهي بتشخيص محتمل مصنّف حسب الخطورة مع إجراءات عملية مقترحة.", "aboutAiH": "قسم “اسأل المساعد”", "aboutAiP": "مخصص للحالات غير المغطاة ضمن الأشجار التشخيصية، ويعتمد على نموذج ذكاء اصطناعي عام. إجاباته استرشادية فقط ولا تُعتمد كبديل عن إجراءات التشغيل والسلامة المعتمدة رسمياً بالقسم.", "statsLine": "{n} فئات أعطال رئيسية  ·  {m} سيناريو تشخيصي موثّق", "backBtn": "رجوع خطوة", "homeBtn": "القائمة الرئيسية", "recommendedAction": "الإجراء المقترح", "printBtn": "طباعة / حفظ التقرير", "copyBtn": "نسخ التقرير كنص", "copiedFlash": "تم النسخ ✓", "restartBtn": "إعادة التشخيص من البداية", "sev_critical": "حرج", "sev_warning": "تنبيه", "sev_info": "معلومة", "aiToggle": "لم تجد حالتك ضمن القائمة؟ صف العطل بكلماتك واسأل المساعد مباشرة ←", "aiInputPh": "مثال: عندي هبوط مفاجئ بقيمة MER أثناء بث مباشر مع وجود رياح قوية...", "aiSubmit": "اسأل المساعد", "aiAnswerLabel": "تحليل مبدئي من المساعد الذكي", "aiLoading": "جارٍ تحليل الحالة…", "aiNoAnswer": "تعذر الحصول على إجابة، حاول إعادة الصياغة.", "aiErr": "حدث خطأ أثناء الاتصال بالمساعد. حاول مرة أخرى.", "aiNote": "هذه الإجابة مولّدة تلقائياً ولأغراض الاسترشاد فقط — راجع المشرف الفني قبل تنفيذ أي إجراء حساس.", "unspecified": "—", "unspecifiedEngineer": "مهندس غير محدد", "otherCategory": "فئة أخرى / غير مصنّفة", "reportTitle": "تقرير تشخيص عطل — DSNG / محطة أرضية", "reportGenerated": "تم إنشاؤه تلقائياً بواسطة مساعد استكشاف أعطال DSNG", "reportEngineer": "المهندس", "reportStation": "المحطة/الموقع", "reportDate": "التاريخ", "reportTime": "الوقت", "reportCategory": "فئة العطل", "reportPath": "مسار التشخيص", "reportDiagnosis": "التشخيص", "downloadWord": "تنزيل Word", "printPdf": "طباعة / حفظ PDF", "delete": "حذف", "confirmDelete": "حذف هذا الإدخال نهائياً؟", "savedOk": "تم الحفظ بنجاح ✓", "savedSessionOnly": "تم الحفظ لهذه الجلسة فقط (تعذّر الحفظ الدائم)", "kbHeader": "قاعدة المعرفة الهندسية", "kbSub": "لم يرد العطل الذي واجهته ضمن القوائم أعلاه؟ وثّقه هنا ليستفيد منه بقية الفريق مستقبلاً. <span class=\"note-inline\">هذه الإدخالات مشتركة ومرئية لكل من يفتح هذه الأداة.</span>", "kbTitleLabel": "عنوان العطل", "kbTitlePh": "مثال: فقدان القفل المتقطع بعد عدة دقائق تشغيل", "kbCatLabel": "الفئة", "kbCausesLabel": "الأسباب المحتملة", "kbCausesPh": "اذكر السبب أو الأسباب المحتملة كما لاحظتها ميدانياً...", "kbFixLabel": "خطوات الإصلاح", "kbFixPh": "الخطوات العملية التي أدّت لحل المشكلة...", "kbNotesLabel": "ملاحظات إضافية (اختياري)", "kbNotesPh": "أي تفاصيل تفيد زميلاً يواجه نفس العطل لاحقاً", "kbSaveBtn": "حفظ في قاعدة المعرفة", "kbExportAllBtn": "تصدير كل القاعدة كملف Word", "kbCountShared": "{n} إدخال محفوظ ومشترك", "kbCountSessionOnly": "{n} إدخال (تخزين مؤقت لهذه الجلسة فقط)", "kbEmpty": "لا توجد إدخالات بعد — كن أول من يوثّق حالة هنا.", "kbPendingBadge": "مساهمة ميدانية — بانتظار المراجعة الفنية", "kbValidationMsg": "الرجاء تعبئة العنوان والأسباب وخطوات الإصلاح على الأقل", "kbNothingToExport": "لا توجد إدخالات لتصديرها بعد.", "expHeader": "دليل الخبراء الهندسي", "expSub": "قائمة بالمهندسين المتخصصين وطريقة التواصل الرسمية معهم للمساعدة في تشخيص الأعطال المعقّدة أو غير الموثّقة.", "expPrivacyNote": "لحماية خصوصية الزملاء: هذا الدليل مخصص لقنوات التواصل الرسمية فقط (البريد الإلكتروني أو التحويلة الداخلية). لا تُدرج أرقام هواتف شخصية هنا، خاصة إذا كانت هذه النسخة ستُنشر أو تُشارك خارج نطاق القسم.", "expNameLabel": "اسم المهندس", "expNamePh": "الاسم الكامل", "expSpecLabel": "التخصص", "expSpecPh": "مثال: أنظمة BUC/HPA، توجيه الهوائيات، الترميز...", "expEmailLabel": "البريد الإلكتروني الرسمي", "expEmailPh": "name@department.org", "expExtLabel": "التحويلة الداخلية (اختياري)", "expExtPh": "مثال: 245", "expNotesLabel": "ملاحظات (اختياري)", "expNotesPh": "أوقات التواجد المعتادة، ملاحظات إضافية...", "expSaveBtn": "إضافة للدليل", "expCountShared": "{n} خبير مسجّل ومشترك", "expCountSessionOnly": "{n} خبير (تخزين مؤقت لهذه الجلسة فقط)", "expEmpty": "لا يوجد خبراء مسجّلون بعد.", "expValidationMsg": "الرجاء تعبئة الاسم والتخصص على الأقل", "footerText": "بُني كأداة دعم فني داخلي — هندسة محطات الأرض / DSNG<br>Created by Eng. Laith Mahdawi"}, "en": {"versionTag": "Version 1.1 · Internal Prototype", "title": "DSNG Troubleshooting Assistant", "subtitle": "An interactive support tool that standardizes and speeds up first-response diagnosis for common Earth Station / DSNG faults, built around the sequence an experienced field engineer actually follows.", "engNameLabel": "Duty Engineer Name", "engNamePh": "Optional — used in the generated report", "stationLabel": "Station / Site / Mission Reference", "stationPh": "Optional — used in the generated report", "aboutSummary": "About This Tool & Methodology", "aboutGoalH": "Goal", "aboutGoalP": "Standardize first-response fault diagnosis across the whole team regardless of experience level, reduce mean time to repair (MTTR), and document every case in a structured way for follow-up and training.", "aboutMethodH": "Methodology", "aboutMethodP": "Each diagnostic path is a decision tree of sequential questions mirroring how an experienced engineer actually thinks through a fault in the field, ending in a severity-classified probable diagnosis with concrete recommended actions.", "aboutAiH": "The “Ask the Assistant” panel", "aboutAiP": "For cases not covered by the diagnostic trees above, backed by a general-purpose AI model. Its answers are guidance only and are not a substitute for the department's official operating and safety procedures.", "statsLine": "{n} major fault categories  ·  {m} documented diagnostic scenarios", "backBtn": "Back one step", "homeBtn": "Main Menu", "recommendedAction": "Recommended Action", "printBtn": "Print / Save Report", "copyBtn": "Copy Report as Text", "copiedFlash": "Copied ✓", "restartBtn": "Restart Diagnosis", "sev_critical": "Critical", "sev_warning": "Warning", "sev_info": "Info", "aiToggle": "Can't find your case above? Describe the fault in your own words and ask the assistant directly →", "aiInputPh": "e.g. Sudden MER drop during a live broadcast, strong wind at the site...", "aiSubmit": "Ask the Assistant", "aiAnswerLabel": "Preliminary AI Assistant Analysis", "aiLoading": "Analyzing the case…", "aiNoAnswer": "Could not get an answer — try rephrasing the question.", "aiErr": "An error occurred while contacting the assistant. Please try again.", "aiNote": "This answer is auto-generated for guidance only — check with your technical supervisor before performing any sensitive action.", "unspecified": "—", "unspecifiedEngineer": "Unspecified engineer", "otherCategory": "Other / Uncategorized", "reportTitle": "Fault Diagnosis Report — DSNG / Earth Station", "reportGenerated": "Auto-generated by the DSNG Troubleshooting Assistant", "reportEngineer": "Engineer", "reportStation": "Station/Site", "reportDate": "Date", "reportTime": "Time", "reportCategory": "Fault Category", "reportPath": "Diagnostic Path", "reportDiagnosis": "Diagnosis", "downloadWord": "Download Word", "printPdf": "Print / Save PDF", "delete": "Delete", "confirmDelete": "Permanently delete this entry?", "savedOk": "Saved successfully ✓", "savedSessionOnly": "Saved for this session only (permanent save failed)", "kbHeader": "Engineering Knowledge Bank", "kbSub": "Didn't find your fault in the lists above? Document it here so the rest of the team benefits later. <span class=\"note-inline\">These entries are shared and visible to everyone who opens this tool.</span>", "kbTitleLabel": "Fault Title", "kbTitlePh": "e.g. Intermittent lock loss after several minutes of operation", "kbCatLabel": "Category", "kbCausesLabel": "Probable Causes", "kbCausesPh": "State the probable cause(s) as observed in the field...", "kbFixLabel": "Fix Steps", "kbFixPh": "The practical steps that resolved the issue...", "kbNotesLabel": "Additional Notes (optional)", "kbNotesPh": "Any details that would help a colleague facing the same fault later", "kbSaveBtn": "Save to Knowledge Bank", "kbExportAllBtn": "Export Entire Bank as Word", "kbCountShared": "{n} saved, shared entries", "kbCountSessionOnly": "{n} entries (temporary, this session only)", "kbEmpty": "No entries yet — be the first to document a case here.", "kbPendingBadge": "Field contribution — pending technical review", "kbValidationMsg": "Please fill in at least the title, causes, and fix steps", "kbNothingToExport": "No entries to export yet.", "expHeader": "Engineering Expert Directory", "expSub": "Specialist engineers and their official contact channels for complex or undocumented fault diagnosis.", "expPrivacyNote": "To protect colleagues' privacy: this directory is for official contact channels only (work email or internal extension). Do not add personal mobile numbers here, especially if this copy will be published or shared outside the department.", "expNameLabel": "Engineer Name", "expNamePh": "Full name", "expSpecLabel": "Specialization", "expSpecPh": "e.g. BUC/HPA systems, antenna pointing, encoding...", "expEmailLabel": "Official Email", "expEmailPh": "name@department.org", "expExtLabel": "Internal Extension (optional)", "expExtPh": "e.g. 245", "expNotesLabel": "Notes (optional)", "expNotesPh": "Usual availability, additional notes...", "expSaveBtn": "Add to Directory", "expCountShared": "{n} registered, shared experts", "expCountSessionOnly": "{n} experts (temporary, this session only)", "expEmpty": "No experts registered yet.", "expValidationMsg": "Please fill in at least the name and specialization", "footerText": "Built as an internal engineering support tool — Earth Station / DSNG Engineering<br>Created by Eng. Laith Mahdawi"}};
+
+let LANG = 'ar';
+
+function T(key){ return (STR[LANG] && STR[LANG][key]) || key; }
+function DATA(){ return APP_DATA[LANG]; }
+function CATS(){ return DATA().categories; }
+function NODES(){ return DATA().nodes; }
+function CAT(id){ return CATS().find(c=>c.id===id); }
+function NODE(id){ return NODES()[id]; }
+
+const icons = {
+  nosignal: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M8.5 16.5a5 5 0 0 1 7-4.6"/><path d="M5 13a9 9 0 0 1 3.5-4.2"/><path d="M12.5 3.5A9 9 0 0 1 19 6"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>`,
+  wave: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h3l2-7 4 14 3-11 2 4h6"/></svg>`,
+  crosspol: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M4 8l16 8"/><path d="M20 8L4 16"/></svg>`,
+  amp: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="10" rx="1"/><path d="M8 7V4M16 7V4M8 20v-3M16 20v-3"/><path d="M8 12h3l1-2 2 4 1-2h1"/></svg>`,
+  dish: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a13 13 0 0 1 18-11"/><path d="M12 12l7 7"/><circle cx="12" cy="12" r="2"/><path d="M12 12L5 19"/></svg>`,
+  video: `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="1.5"/><path d="M16 10.5l5-3v9l-5-3"/></svg>`
+};
+
+/* ---------------- STATE ---------------- */
+let currentCat = null;
+let path = [];
+let trailAnswers = [];
+
+/* ---------------- I18N APPLY ---------------- */
+function applyStaticI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    el.textContent = T(el.getAttribute('data-i18n'));
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{
+    el.placeholder = T(el.getAttribute('data-i18n-ph'));
+  });
+  document.getElementById('langArBtn').classList.toggle('active', LANG==='ar');
+  document.getElementById('langEnBtn').classList.toggle('active', LANG==='en');
+  document.getElementById('kbSub').innerHTML = T('kbSub');
+  document.getElementById('expSub').textContent = T('expSub');
+  document.getElementById('expPrivacyNote').textContent = T('expPrivacyNote');
+  document.getElementById('footerText').innerHTML = T('footerText');
+}
+
+function setLang(lang){
+  LANG = lang;
+  const html = document.getElementById('htmlRoot');
+  html.lang = lang;
+  html.dir = lang==='ar' ? 'rtl' : 'ltr';
+  applyStaticI18n();
+  renderHomeGrid();
+  renderStats();
+  populateKBCategorySelect();
+  if(currentCat){
+    document.getElementById('catTag').textContent = CAT(currentCat).title.toUpperCase();
+    renderAll();
+  }
+  renderKBList();
+  renderExpertList();
+}
+document.getElementById('langArBtn').onclick = ()=> setLang('ar');
+document.getElementById('langEnBtn').onclick = ()=> setLang('en');
+
+/* ---------------- HOME GRID ---------------- */
+function renderHomeGrid(){
+  const homeGrid = document.getElementById('homeGrid');
+  homeGrid.innerHTML = '';
+  CATS().forEach(c=>{
+    const btn = document.createElement('button');
+    btn.className = 'card-btn';
+    btn.innerHTML = `${icons[c.icon]}<span class="ct">${c.title}</span><span class="cd">${c.desc}</span>`;
+    btn.onclick = ()=> startCategory(c.id);
+    homeGrid.appendChild(btn);
+  });
+}
+
+function renderStats(){
+  const totalScenarios = Object.values(NODES()).filter(n=>n.r).length;
+  document.getElementById('statsLine').textContent =
+    T('statsLine').replace('{n}', CATS().length).replace('{m}', totalScenarios);
+}
+
+function startCategory(id){
+  currentCat = id;
+  path = [CAT(id).root];
+  trailAnswers = [];
+  document.getElementById('catTag').textContent = CAT(id).title.toUpperCase();
+  document.getElementById('flowPanel').classList.add('active');
+  document.getElementById('homeGrid').style.display = 'none';
+  document.getElementById('statsLine').style.display = 'none';
+  renderAll();
+  document.getElementById('flowPanel').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function goHome(){
+  document.getElementById('flowPanel').classList.remove('active');
+  document.getElementById('homeGrid').style.display = 'grid';
+  document.getElementById('statsLine').style.display = 'block';
+}
+
+function renderAll(){
+  renderTrail();
+  renderNode();
+  document.getElementById('backBtn').disabled = trailAnswers.length===0;
+}
+
+function renderTrail(){
+  const trail = document.getElementById('trail');
+  if(trailAnswers.length===0){ trail.style.display='none'; trail.innerHTML=''; return; }
+  trail.style.display='flex';
+  trail.innerHTML = trailAnswers.map(t=>`<div class="trail-item">${t.q}<br><b>&rarr; ${t.a}</b></div>`).join('');
+}
+
+function renderNode(){
+  const nodeId = path[path.length-1];
+  const node = NODE(nodeId);
+  const stepArea = document.getElementById('stepArea');
+
+  if(node.r){
+    stepArea.innerHTML = `
+      <div class="result sev-${node.sev}">
+        <div class="result-head">
+          <span class="sev-tag mono">${T('sev_'+node.sev)}</span>
+          <span class="result-title">${node.title}</span>
+        </div>
+        <div class="result-body">
+          <div class="label">${T('recommendedAction')}</div>
+          <ul>${node.steps.map(s=>`<li>${s}</li>`).join('')}</ul>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button class="btn primary" id="printBtn">${T('printBtn')}</button>
+        <button class="btn" id="copyBtn">${T('copyBtn')}</button>
+        <span class="copy-flash" id="copyFlash">${T('copiedFlash')}</span>
+        <button class="btn" id="restartBtn">${T('restartBtn')}</button>
+      </div>
+    `;
+    document.getElementById('printBtn').onclick = printReport;
+    document.getElementById('copyBtn').onclick = copyReport;
+    document.getElementById('restartBtn').onclick = ()=>startCategory(currentCat);
+  } else {
+    stepArea.innerHTML = `
+      <p class="q-text">${node.q}</p>
+      <div class="opts">${node.o.map((opt,idx)=>`<button class="opt-btn" data-idx="${idx}">${opt.l}</button>`).join('')}</div>
+    `;
+    stepArea.querySelectorAll('.opt-btn').forEach((b,idx)=>{
+      b.onclick = ()=>{
+        const opt = node.o[idx];
+        trailAnswers.push({q: node.q, a: opt.l});
+        path.push(opt.n);
+        renderAll();
+      };
+    });
+  }
+}
+
+document.getElementById('backBtn').onclick = ()=>{
+  if(trailAnswers.length===0) return;
+  trailAnswers.pop();
+  path.pop();
+  renderAll();
+};
+document.getElementById('homeBtn').onclick = goHome;
+
+/* ---------------- REPORT ---------------- */
+function buildReport(){
+  const nodeId = path[path.length-1];
+  const node = NODE(nodeId);
+  const eng = document.getElementById('engName').value.trim() || T('unspecified');
+  const station = document.getElementById('stationName').value.trim() || T('unspecified');
+  const now = new Date();
+  const locale = LANG==='ar' ? 'ar-EG' : 'en-GB';
+  const dateStr = now.toLocaleDateString(locale, {year:'numeric', month:'long', day:'numeric'});
+  const timeStr = now.toLocaleTimeString(locale, {hour:'2-digit', minute:'2-digit'});
+  return {eng, station, dateStr, timeStr, catTitle: CAT(currentCat).title, node, steps: trailAnswers};
+}
+
+function reportAsText(r){
+  let lines = [];
+  lines.push(T('reportTitle'));
+  lines.push('----------------------------------------');
+  lines.push(`${T('reportEngineer')}: ${r.eng}`);
+  lines.push(`${T('reportStation')}: ${r.station}`);
+  lines.push(`${T('reportDate')}: ${r.dateStr}  ${T('reportTime')}: ${r.timeStr}`);
+  lines.push(`${T('reportCategory')}: ${r.catTitle}`);
+  lines.push('');
+  lines.push(T('reportPath') + ':');
+  r.steps.forEach((s,i)=> lines.push(`  ${i+1}. ${s.q} -> ${s.a}`));
+  lines.push('');
+  lines.push(`${T('reportDiagnosis')}: [${T('sev_'+r.node.sev)}] ${r.node.title}`);
+  lines.push(T('recommendedAction') + ':');
+  r.node.steps.forEach(s=> lines.push(`  - ${s}`));
+  return lines.join('\n');
+}
+
+function copyReport(){
+  const text = reportAsText(buildReport());
+  const flash = document.getElementById('copyFlash');
+  const show = ()=>{ flash.style.display='inline'; setTimeout(()=>flash.style.display='none', 1800); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(show).catch(()=>fallbackCopy(text, show));
+  } else { fallbackCopy(text, show); }
+}
+function fallbackCopy(text, cb){
+  const ta = document.createElement('textarea');
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); cb(); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+function printReport(){
+  const r = buildReport();
+  const area = document.getElementById('printArea');
+  area.innerHTML = `
+    <div class="pr-h">${T('reportTitle')}</div>
+    <div class="pr-sub">${T('reportGenerated')}</div>
+    <div class="pr-meta">
+      <div><span>${T('reportEngineer')}</span>${r.eng}</div>
+      <div><span>${T('reportStation')}</span>${r.station}</div>
+      <div><span>${T('reportDate')}</span>${r.dateStr}</div>
+      <div><span>${T('reportTime')}</span>${r.timeStr}</div>
+      <div><span>${T('reportCategory')}</span>${r.catTitle}</div>
+    </div>
+    <div class="pr-section-title">${T('reportPath')}</div>
+    ${r.steps.map((s,i)=>`<div class="pr-step">${i+1}. ${s.q}<br><b>&rarr; ${s.a}</b></div>`).join('')}
+    <div class="pr-section-title">${T('reportDiagnosis')}</div>
+    <div class="pr-diag">
+      <h3>[${T('sev_'+r.node.sev)}] ${r.node.title}</h3>
+      ${r.node.steps.map(s=>`<div class="pr-step">- ${s}</div>`).join('')}
+    </div>
+  `;
+  window.print();
+}
+
+/* ---------------- AI ASK ---------------- */
+const aiToggle = document.getElementById('aiToggle');
+const aiBox = document.getElementById('aiBox');
+aiToggle.onclick = ()=> aiBox.classList.toggle('active');
+
+document.getElementById('aiSubmit').onclick = async ()=>{
+  const input = document.getElementById('aiInput').value.trim();
+  const answerBox = document.getElementById('aiAnswer');
+  const content = document.getElementById('aiContent');
+  const submitBtn = document.getElementById('aiSubmit');
+
+  if(!input) return;
+
+  submitBtn.disabled = true;
+  answerBox.classList.add('active');
+  content.innerHTML = `<span class="ai-loading">${T('aiLoading')}</span>`;
+
+  try{
+    const response = await fetch("/api/assistant/diagnose", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        input: input,
+        language: LANG
+      })
+    });
+
+    const data = await response.json();
+
+    if(!response.ok){
+      throw new Error(data.detail || T('aiErr'));
+    }
+
+    const prompt = data.prompt || '';
+
+    content.innerHTML = `
+      <div class="ai-prepared">
+        <p><strong>${LANG === 'ar' ? 'تم تجهيز طلب هندسي للمساعدة بالذكاء الاصطناعي.' : 'Your engineering AI prompt is ready.'}</strong></p>
+
+        <textarea
+          id="aiPromptPreview"
+          class="ai-prompt-preview"
+          readonly
+          spellcheck="false"
+        ></textarea>
+
+        <div class="ai-actions">
+          <button type="button" class="ai-action-btn" id="copyAiPrompt">
+            ${LANG === 'ar' ? 'نسخ الـPrompt' : 'Copy Prompt'}
+          </button>
+
+          <button type="button" class="ai-action-btn" id="openChatGPT">
+            ${LANG === 'ar' ? 'فتح ChatGPT' : 'Open ChatGPT'}
+          </button>
+
+          <button type="button" class="ai-action-btn" id="openClaude">
+            ${LANG === 'ar' ? 'فتح Claude' : 'Open Claude'}
+          </button>
+        </div>
+
+        <p class="ai-external-note">
+          ${LANG === 'ar'
+            ? 'سيتم فتح المساعد الخارجي بحسابك أنت. لا يتم إرسال أي مفتاح API من هذا التطبيق.'
+            : 'The external assistant opens using your own account. This application does not send any API key.'}
+        </p>
+      </div>
+    `;
+
+    const promptPreview = document.getElementById('aiPromptPreview');
+    promptPreview.value = prompt;
+
+    document.getElementById('copyAiPrompt').onclick = async ()=>{
+      try{
+        await navigator.clipboard.writeText(prompt);
+
+        const btn = document.getElementById('copyAiPrompt');
+        const original = btn.textContent;
+        btn.textContent = LANG === 'ar' ? 'تم النسخ ✓' : 'Copied ✓';
+
+        setTimeout(()=>{
+          btn.textContent = original;
+        }, 1500);
+
+      }catch(err){
+        promptPreview.focus();
+        promptPreview.select();
+        document.execCommand('copy');
+      }
+    };
+
+    document.getElementById('openChatGPT').onclick = ()=>{
+      window.open('https://chatgpt.com/', '_blank', 'noopener,noreferrer');
+    };
+
+    document.getElementById('openClaude').onclick = ()=>{
+      window.open('https://claude.ai/new', '_blank', 'noopener,noreferrer');
+    };
+
+  }catch(err){
+    content.textContent = T('aiErr');
+    console.error(err);
+  }finally{
+    submitBtn.disabled = false;
+  }
+};
+
+/* ---------------- KNOWLEDGE BANK ---------------- */
+const KB_KEY = 'kb_entries';
+const storageOK = (typeof window !== 'undefined') && !!window.storage;
+let kbEntries = [];
+let kbSessionOnly = false;
+
+function kbCategoryLabel(id){
+  const c = CAT(id);
+  return c ? c.title : T('otherCategory');
+}
+function populateKBCategorySelect(){
+  const sel = document.getElementById('kbCategory');
+  const prev = sel.value;
+  sel.innerHTML = CATS().map(c=>`<option value="${c.id}">${c.title}</option>`).join('')
+    + `<option value="other">${T('otherCategory')}</option>`;
+  if(prev) sel.value = prev;
+}
+async function loadShared(key){
+  if(!storageOK){ kbSessionOnly = true; return []; }
+  try{
+    const res = await window.storage.get(key, true);
+    return res && res.value ? JSON.parse(res.value) : [];
+  }catch(e){ return []; }
+}
+async function persistShared(key, entries){
+  if(!storageOK){ kbSessionOnly = true; return false; }
+  try{
+    const result = await window.storage.set(key, JSON.stringify(entries), true);
+    return !!result;
+  }catch(e){ console.error('storage error', e); return false; }
+}
+function escapeHtml(str){
+  return String(str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function localeDate(iso){
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  return d.toLocaleDateString(LANG==='ar'?'ar-EG':'en-GB', {year:'numeric', month:'short', day:'numeric'});
+}
+
+function renderKBList(){
+  const list = document.getElementById('kbList');
+  const count = document.getElementById('kbCount');
+  count.textContent = kbSessionOnly
+    ? T('kbCountSessionOnly').replace('{n}', kbEntries.length)
+    : T('kbCountShared').replace('{n}', kbEntries.length);
+
+  if(kbEntries.length===0){
+    list.innerHTML = `<div class="empty-msg">${T('kbEmpty')}</div>`;
+    return;
+  }
+  list.innerHTML = [...kbEntries].reverse().map(e=>`
+    <div class="entry-card" data-id="${e.id}">
+      <div class="entry-card-top">
+        <span class="entry-title">${escapeHtml(e.title)}</span>
+        <span class="entry-badge">${T('kbPendingBadge')}</span>
+      </div>
+      <div class="entry-cat-tag mono">${kbCategoryLabel(e.category)}</div>
+      <div class="entry-field-label">${T('kbCausesLabel')}</div>
+      <div class="entry-field-text">${escapeHtml(e.causes)}</div>
+      <div class="entry-field-label">${T('kbFixLabel')}</div>
+      <div class="entry-field-text">${escapeHtml(e.fix)}</div>
+      ${e.notes ? `<div class="entry-field-label">${T('kbNotesLabel')}</div><div class="entry-field-text">${escapeHtml(e.notes)}</div>` : ''}
+      <div class="entry-meta">${escapeHtml(e.author||T('unspecifiedEngineer'))} &middot; ${localeDate(e.date)}</div>
+      <div class="entry-actions">
+        <button class="btn" data-act="word">${T('downloadWord')}</button>
+        <button class="btn" data-act="pdf">${T('printPdf')}</button>
+        <button class="btn danger" data-act="del">${T('delete')}</button>
+      </div>
+    </div>`).join('');
+
+  list.querySelectorAll('.entry-card').forEach(card=>{
+    const id = card.dataset.id;
+    const entry = kbEntries.find(x=>x.id===id);
+    card.querySelector('[data-act="word"]').onclick = ()=> downloadEntryAsWord(entry, 'kb');
+    card.querySelector('[data-act="pdf"]').onclick = ()=> printEntry(entry, 'kb');
+    card.querySelector('[data-act="del"]').onclick = async ()=>{
+      if(!confirm(T('confirmDelete'))) return;
+      kbEntries = kbEntries.filter(x=>x.id!==id);
+      await persistShared(KB_KEY, kbEntries);
+      renderKBList();
+    };
+  });
+}
+
+document.getElementById('kbSaveBtn').onclick = async ()=>{
+  const title = document.getElementById('kbTitle').value.trim();
+  const category = document.getElementById('kbCategory').value;
+  const causes = document.getElementById('kbCauses').value.trim();
+  const fix = document.getElementById('kbFix').value.trim();
+  const notes = document.getElementById('kbNotes').value.trim();
+  const status = document.getElementById('kbStatus');
+
+  if(!title || !causes || !fix){
+    status.textContent = T('kbValidationMsg');
+    status.style.color = 'var(--red)';
+    return;
+  }
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    title, category, causes, fix, notes,
+    author: (document.getElementById('engName').value.trim() || T('unspecifiedEngineer')),
+    date: new Date().toISOString()
+  };
+  kbEntries.push(entry);
+  const ok = await persistShared(KB_KEY, kbEntries);
+  status.style.color = 'var(--cyan)';
+  status.textContent = ok ? T('savedOk') : T('savedSessionOnly');
+  setTimeout(()=> status.textContent='', 3000);
+  document.getElementById('kbTitle').value='';
+  document.getElementById('kbCauses').value='';
+  document.getElementById('kbFix').value='';
+  document.getElementById('kbNotes').value='';
+  renderKBList();
+};
+
+/* ---- Word / PDF export (shared by KB + Expert Directory) ---- */
+function wordDocHtml(bodyHtml, title, dir){
+  return `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+<style>
+  body{font-family:Arial, Tahoma, sans-serif; direction:${dir}; text-align:${dir==='rtl'?'right':'left'};}
+  h1{font-size:20px;} h2{font-size:15px;color:#333;border-bottom:1px solid #ccc;padding-bottom:4px;}
+  .meta{font-size:12px;color:#555;margin-bottom:14px;}
+  .box{border:1px solid #999;padding:10px;margin-bottom:14px;}
+  p{font-size:13px;line-height:1.7;white-space:pre-wrap;}
+</style></head>
+<body>${bodyHtml}</body></html>`;
+}
+function triggerDocDownload(html, filename){
+  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function downloadEntryAsWord(e, kind){
+  const dir = LANG==='ar' ? 'rtl' : 'ltr';
+  let body;
+  if(kind==='kb'){
+    body = `
+      <h1>${escapeHtml(e.title)}</h1>
+      <div class="meta">${T('kbCatLabel')}: ${escapeHtml(kbCategoryLabel(e.category))} | ${T('reportEngineer')}: ${escapeHtml(e.author)} | ${localeDate(e.date)}</div>
+      <h2>${T('kbCausesLabel')}</h2><div class="box"><p>${escapeHtml(e.causes)}</p></div>
+      <h2>${T('kbFixLabel')}</h2><div class="box"><p>${escapeHtml(e.fix)}</p></div>
+      ${e.notes ? `<h2>${T('kbNotesLabel')}</h2><div class="box"><p>${escapeHtml(e.notes)}</p></div>` : ''}
+    `;
+  } else {
+    body = `
+      <h1>${escapeHtml(e.name)}</h1>
+      <div class="meta">${T('expSpecLabel')}: ${escapeHtml(e.specialization)}</div>
+      <h2>${T('expEmailLabel')}</h2><div class="box"><p>${escapeHtml(e.email||'-')}</p></div>
+      <h2>${T('expExtLabel')}</h2><div class="box"><p>${escapeHtml(e.extension||'-')}</p></div>
+      ${e.notes ? `<h2>${T('expNotesLabel')}</h2><div class="box"><p>${escapeHtml(e.notes)}</p></div>` : ''}
+    `;
+  }
+  triggerDocDownload(wordDocHtml(body, e.title||e.name, dir), `${(e.title||e.name).slice(0,40)}.doc`);
+}
+function exportAllKBAsWord(){
+  if(kbEntries.length===0){ alert(T('kbNothingToExport')); return; }
+  const dir = LANG==='ar' ? 'rtl' : 'ltr';
+  const body = [`<h1>${T('kbHeader')}</h1><div class="meta">${T('reportGenerated')} — ${new Date().toLocaleDateString(LANG==='ar'?'ar-EG':'en-GB')}</div>`]
+    .concat([...kbEntries].reverse().map(e=>`
+        <h2>${escapeHtml(e.title)}</h2>
+        <div class="meta">${T('kbCatLabel')}: ${escapeHtml(kbCategoryLabel(e.category))} | ${T('reportEngineer')}: ${escapeHtml(e.author)} | ${localeDate(e.date)}</div>
+        <div class="box">
+          <p><b>${T('kbCausesLabel')}:</b>\n${escapeHtml(e.causes)}</p>
+          <p><b>${T('kbFixLabel')}:</b>\n${escapeHtml(e.fix)}</p>
+          ${e.notes ? `<p><b>${T('kbNotesLabel')}:</b>\n${escapeHtml(e.notes)}</p>` : ''}
+        </div>`)).join('');
+  triggerDocDownload(wordDocHtml(body, T('kbHeader'), dir), `knowledge-base-export.doc`);
+}
+document.getElementById('kbExportAllBtn').onclick = exportAllKBAsWord;
+
+function printEntry(e, kind){
+  const area = document.getElementById('printArea');
+  if(kind==='kb'){
+    area.innerHTML = `
+      <div class="pr-h">${escapeHtml(e.title)}</div>
+      <div class="pr-sub">${T('kbHeader')}</div>
+      <div class="pr-meta">
+        <div><span>${T('kbCatLabel')}</span>${escapeHtml(kbCategoryLabel(e.category))}</div>
+        <div><span>${T('reportEngineer')}</span>${escapeHtml(e.author)}</div>
+        <div><span>${T('reportDate')}</span>${localeDate(e.date)}</div>
+        <div><span>${T('kbPendingBadge')}</span></div>
+      </div>
+      <div class="pr-section-title">${T('kbCausesLabel')}</div><div class="pr-step">${escapeHtml(e.causes)}</div>
+      <div class="pr-section-title">${T('kbFixLabel')}</div><div class="pr-step">${escapeHtml(e.fix)}</div>
+      ${e.notes ? `<div class="pr-section-title">${T('kbNotesLabel')}</div><div class="pr-step">${escapeHtml(e.notes)}</div>` : ''}
+    `;
+  } else {
+    area.innerHTML = `
+      <div class="pr-h">${escapeHtml(e.name)}</div>
+      <div class="pr-sub">${T('expHeader')}</div>
+      <div class="pr-meta">
+        <div><span>${T('expSpecLabel')}</span>${escapeHtml(e.specialization)}</div>
+        <div><span>${T('expEmailLabel')}</span>${escapeHtml(e.email||'-')}</div>
+        <div><span>${T('expExtLabel')}</span>${escapeHtml(e.extension||'-')}</div>
+      </div>
+      ${e.notes ? `<div class="pr-section-title">${T('expNotesLabel')}</div><div class="pr-step">${escapeHtml(e.notes)}</div>` : ''}
+    `;
+  }
+  window.print();
+}
+
+/* ---------------- EXPERT DIRECTORY ---------------- */
+const EXP_KEY = 'expert_directory';
+let expEntries = [];
+let expSessionOnly = false;
+
+function renderExpertList(){
+  const list = document.getElementById('expList');
+  const count = document.getElementById('expCount');
+  count.textContent = expSessionOnly
+    ? T('expCountSessionOnly').replace('{n}', expEntries.length)
+    : T('expCountShared').replace('{n}', expEntries.length);
+
+  if(expEntries.length===0){
+    list.innerHTML = `<div class="empty-msg">${T('expEmpty')}</div>`;
+    return;
+  }
+  list.innerHTML = [...expEntries].reverse().map(e=>`
+    <div class="entry-card" data-id="${e.id}">
+      <div class="entry-card-top">
+        <span class="entry-title">${escapeHtml(e.name)}</span>
+      </div>
+      <div class="entry-cat-tag mono">${escapeHtml(e.specialization)}</div>
+      ${e.email ? `<div class="entry-field-label">${T('expEmailLabel')}</div><div class="entry-field-text">${escapeHtml(e.email)}</div>` : ''}
+      ${e.extension ? `<div class="entry-field-label">${T('expExtLabel')}</div><div class="entry-field-text">${escapeHtml(e.extension)}</div>` : ''}
+      ${e.notes ? `<div class="entry-field-label">${T('expNotesLabel')}</div><div class="entry-field-text">${escapeHtml(e.notes)}</div>` : ''}
+      <div class="entry-actions">
+        <button class="btn" data-act="word">${T('downloadWord')}</button>
+        <button class="btn" data-act="pdf">${T('printPdf')}</button>
+        <button class="btn danger" data-act="del">${T('delete')}</button>
+      </div>
+    </div>`).join('');
+
+  list.querySelectorAll('.entry-card').forEach(card=>{
+    const id = card.dataset.id;
+    const entry = expEntries.find(x=>x.id===id);
+    card.querySelector('[data-act="word"]').onclick = ()=> downloadEntryAsWord(entry, 'expert');
+    card.querySelector('[data-act="pdf"]').onclick = ()=> printEntry(entry, 'expert');
+    card.querySelector('[data-act="del"]').onclick = async ()=>{
+      if(!confirm(T('confirmDelete'))) return;
+      expEntries = expEntries.filter(x=>x.id!==id);
+      await persistShared(EXP_KEY, expEntries);
+      renderExpertList();
+    };
+  });
+}
+
+document.getElementById('expSaveBtn').onclick = async ()=>{
+  const name = document.getElementById('expName').value.trim();
+  const specialization = document.getElementById('expSpec').value.trim();
+  const email = document.getElementById('expEmail').value.trim();
+  const extension = document.getElementById('expExt').value.trim();
+  const notes = document.getElementById('expNotes').value.trim();
+  const status = document.getElementById('expStatus');
+
+  if(!name || !specialization){
+    status.textContent = T('expValidationMsg');
+    status.style.color = 'var(--red)';
+    return;
+  }
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
+    name, specialization, email, extension, notes,
+    date: new Date().toISOString()
+  };
+  expEntries.push(entry);
+  const ok = await persistShared(EXP_KEY, expEntries);
+  status.style.color = 'var(--cyan)';
+  status.textContent = ok ? T('savedOk') : T('savedSessionOnly');
+  setTimeout(()=> status.textContent='', 3000);
+  document.getElementById('expName').value='';
+  document.getElementById('expSpec').value='';
+  document.getElementById('expEmail').value='';
+  document.getElementById('expExt').value='';
+  document.getElementById('expNotes').value='';
+  renderExpertList();
+};
+
+/* ---------------- INIT ---------------- */
+(async function init(){
+  applyStaticI18n();
+  renderHomeGrid();
+  renderStats();
+  populateKBCategorySelect();
+
+  document.getElementById('kbCount').textContent = '...';
+  document.getElementById('expCount').textContent = '...';
+  kbEntries = await loadShared(KB_KEY);
+  expEntries = await loadShared(EXP_KEY);
+  renderKBList();
+  renderExpertList();
+})();
+</script>
+</body>
+</html>
