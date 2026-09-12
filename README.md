@@ -1,5 +1,11 @@
 # AI Broadcast Engineering Assistant
 
+[![Tests](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/limahdawi-sketch/AI-Broadcast-Engineering-Assistant)](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/releases)
+[![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)](https://fastapi.tiangolo.com/)
+
+
 A practical engineering support tool for Earth Station / DSNG troubleshooting.
 
 Built to standardize first-response diagnosis, preserve field knowledge, describe equipment in a vendor-neutral way, and prepare structured cases for optional external AI assistance.
