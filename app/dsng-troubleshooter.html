@@ -794,6 +794,35 @@ const KB_API = '/api/knowledge';
 let kbEntries = [];
 let kbSessionOnly = false;
 
+function escapeHtml(value){
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function localeDate(value){
+  if(!value) return '—';
+
+  const date = new Date(value);
+
+  if(Number.isNaN(date.getTime())){
+    return escapeHtml(String(value));
+  }
+
+  return date.toLocaleString(
+    LANG === 'ar' ? 'ar-JO' : 'en-GB',
+    {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }
+  );
+}
+
+
+
 function kbCategoryLabel(id){
   const c = CAT(id);
   return c ? c.title : T('otherCategory');
@@ -1035,14 +1064,40 @@ function wordDocHtml(bodyHtml, title, dir){
 </style></head>
 <body>${bodyHtml}</body></html>`;
 }
+
 function triggerDocDownload(html, filename){
-  const blob = new Blob(['\ufeff', html], {type:'application/msword'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  try{
+    const blob = new Blob(
+      ['\ufeff', html],
+      {type:'application/msword;charset=utf-8'}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+
+  }catch(error){
+    console.error('Word export failed:', error);
+
+    alert(
+      LANG === 'ar'
+        ? 'تعذر إنشاء ملف Word.'
+        : 'Unable to create the Word file.'
+    );
+  }
 }
+
 function downloadEntryAsWord(e, kind){
   const dir = LANG==='ar' ? 'rtl' : 'ltr';
   let body;
