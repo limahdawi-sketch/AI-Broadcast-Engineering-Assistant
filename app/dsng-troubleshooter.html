@@ -1167,6 +1167,53 @@ function printEntry(e, kind){
   window.print();
 }
 
+/* ---------------- SHARED STORAGE ---------------- */
+
+async function loadShared(key) {
+  try {
+    const raw = localStorage.getItem(key);
+
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('Shared storage load error:', error);
+    return [];
+  }
+}
+
+async function persistShared(key, entries) {
+  try {
+    localStorage.setItem(
+      key,
+      JSON.stringify(Array.isArray(entries) ? entries : [])
+    );
+
+    return true;
+  } catch (error) {
+    console.error('Shared storage save error:', error);
+
+    try {
+      sessionStorage.setItem(
+        key,
+        JSON.stringify(Array.isArray(entries) ? entries : [])
+      );
+
+      return false;
+    } catch (sessionError) {
+      console.error(
+        'Session storage fallback save error:',
+        sessionError
+      );
+
+      return false;
+    }
+  }
+}
 /* ---------------- EXPERT DIRECTORY ---------------- */
 const EXP_KEY = 'expert_directory';
 let expEntries = [];
