@@ -1,118 +1,169 @@
 # AI Broadcast Engineering Assistant
 
-[![Tests](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/actions/workflows/tests.yml/badge.svg)](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/actions/workflows/tests.yml)
-[![Release](https://img.shields.io/github/v/release/limahdawi-sketch/AI-Broadcast-Engineering-Assistant)](https://github.com/limahdawi-sketch/AI-Broadcast-Engineering-Assistant/releases)
-[![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)](https://fastapi.tiangolo.com/)
+**AI-powered engineering support for Earth Station & DSNG troubleshooting**
 
-## About the Project
+A practical, vendor-neutral engineering support tool designed to help broadcast engineers standardize first-response diagnosis, preserve field knowledge, and prepare structured cases for optional external AI assistance.
 
-**AI Broadcast Engineering Assistant** is an independent engineering project focused on Earth Station and DSNG troubleshooting.
+> **Public MVP / Engineering Prototype**  
+> Created by **Laith Mahdawi**
 
-This Public MVP is shared freely with the engineering community as a contribution to knowledge and practical field learning.
+## Live Demo
 
-**Original Public MVP by Laith Mahdawi — 2026**
+**https://ai-broadcast-engineering-assistant.onrender.com/**
 
-The Public MVP is maintained as a stable, community-oriented version. Future professional and enterprise capabilities may be developed separately without compromising the purpose and accessibility of this public release.
+## Why this project exists
 
-> *AI should assist engineering judgment, not replace it.*
+In field engineering, a large part of troubleshooting depends on experience: the order of checks, the questions asked first, the evidence collected, and the decision to escalate.
 
-A practical engineering support tool for Earth Station / DSNG troubleshooting.
+This project turns part of that experience into a reviewable digital workflow while keeping human engineering judgment at the center.
 
-Built to standardize first-response diagnosis, preserve field knowledge, describe equipment in a vendor-neutral way, and prepare structured cases for optional external AI assistance.
+The goal is not to replace the engineer. The goal is to help engineers **diagnose more consistently, document better, and learn from one another**.
 
-> **Created by Laith Mahdawi**
+## What the MVP demonstrates
 
-## What this project does
+- Six major DSNG / Earth Station fault categories
+- Deterministic decision-tree troubleshooting
+- Probable diagnosis with recommended actions
+- Engineering Knowledge Bank backed by a database
+- Controlled knowledge validation workflow
+- Vendor-neutral equipment profile foundation
+- FastAPI backend
+- Arabic and English interface
+- Structured AI prompt preparation for difficult or uncovered cases
+- Optional hand-off to the user's own ChatGPT or Claude account
+- Word and PDF report generation
+- Public deployment with automated checks
 
-The assistant combines a deterministic diagnostic engine with an engineering Knowledge Bank and equipment profiles.
-
-It is designed around the way a broadcast engineer actually approaches a field fault:
+## Engineering workflow
 
 ```text
 Observed Fault
-     ↓
+      ↓
 Diagnostic Category
-     ↓
+      ↓
 Decision Tree
-     ↓
+      ↓
 Probable Diagnosis
-     ↓
+      ↓
 Recommended Actions
-     ↓
+      ↓
 Knowledge / Equipment Context
-     ↓
-Optional AI Assistance
+      ↓
+Optional External AI Assistance
 ```
 
-The deterministic diagnostic engine remains the primary troubleshooting mechanism. External AI is an optional fallback for cases that are not adequately covered by the predefined diagnostic trees.
+The deterministic troubleshooting logic remains the primary mechanism. Generative AI is intentionally optional and advisory.
 
-## Current capabilities
+## Knowledge Bank
 
-* 6 major DSNG / Earth Station fault categories
-* 26 documented diagnostic scenarios
-* Server-side diagnostic decision trees
-* Diagnostic tree integrity validation
-* Engineering Knowledge Bank with database persistence
-* Controlled knowledge validation workflow
-* Vendor-neutral Equipment Profiles
-* FastAPI backend
-* SQLite persistence
-* Interactive Swagger API documentation
-* AI Gateway that prepares structured engineering prompts
-* Copy Prompt functionality
-* Open ChatGPT functionality
-* Open Claude functionality
-* Arabic and English interface support
-* No AI API key embedded in the frontend
-* Public-safe configuration using `.env.example`
+The Knowledge Bank is designed around a controlled-learning principle:
+
+```text
+Field Observation
+      ↓
+Pending Contribution
+      ↓
+Technical Review
+      ↓
+Approved Knowledge
+```
+
+The intent is to capture field experience without automatically treating every observation as verified departmental knowledge.
+
+## AI assistance model
+
+The public MVP does **not** require the project owner's ChatGPT, Claude, or AI API credentials.
+
+For cases outside the predefined troubleshooting trees, the backend prepares a structured engineering prompt. The user can then:
+
+1. Copy the prompt.
+2. Open ChatGPT using their own account.
+3. Open Claude using their own account.
+4. Continue the investigation using their own session and judgment.
+
+This keeps external AI usage separated from the project owner's account and avoids embedding a shared AI API key in the public frontend.
+
+## Technology
+
+- Python 3
+- FastAPI
+- SQLAlchemy
+- PostgreSQL for hosted deployment
+- SQLite for local development fallback
+- HTML / CSS / JavaScript frontend
+- GitHub Actions
+- Render
 
 ## Architecture
 
 ```text
                     AI Broadcast Engineering Assistant
                                   │
-              ┌───────────────────┴───────────────────┐
-              │                                       │
-       Diagnostic Engine                         AI Gateway
-              │                                       │
-      Decision Trees                           Engineering Prompt
-              │                                       │
-      Diagnosis + Actions                  ┌──────────┴──────────┐
-                                           │                     │
-                                      ChatGPT                Claude
-                                           │                     │
-                                     User's account         User's account
+                 ┌────────────────┴────────────────┐
+                 │                                 │
+          Diagnostic Engine                   AI Gateway
+                 │                                 │
+           Decision Trees                 Engineering Prompt
+                 │                                 │
+         Diagnosis + Actions            ┌──────────┴──────────┐
+                                        │                     │
+                                   ChatGPT                Claude
+                                        │                     │
+                                  User account          User account
+
+                 ┌───────────────────────────────────────────┐
+                 │              Engineering Data              │
+                 │ Knowledge Bank · Equipment Profiles       │
+                 └───────────────────────────────────────────┘
 ```
 
-### Backend
+## Safety and engineering principles
 
-```text
-backend/
-├── api/
-│   ├── diagnostic.py
-│   ├── knowledge.py
-│   ├── equipment.py
-│   └── assistant.py
-│
-├── models/
-├── schemas/
-├── rules/
-│   └── dsng_tree.py
-│
-├── tests/
-├── data/
-├── main.py
-├── requirements.txt
-├── .env.example
-└── .env
-```
+### Deterministic first
 
-### Frontend
+Operational troubleshooting should remain reviewable and predictable. The predefined diagnostic trees are therefore the primary troubleshooting path.
 
-The original DSNG Troubleshooting Assistant interface is served by the FastAPI application and remains the main user-facing engineering tool.
+### Human in the loop
 
-## Run on Windows
+AI-generated content is advisory. Qualified engineering judgment, approved procedures, and safety requirements remain authoritative.
+
+### Controlled learning
+
+Field knowledge should be captured and reviewed before being treated as trusted departmental knowledge.
+
+### Vendor neutral
+
+Equipment information is represented as data where practical rather than being hard-coded into the diagnostic logic.
+
+### Public safe
+
+No private AI API credential is embedded in the public frontend, and local secrets are excluded from source control.
+
+## Public MVP status
+
+This release is intentionally an **MVP / engineering prototype** rather than a safety-critical production system.
+
+### Verified in the current release
+
+- Public web deployment
+- Health endpoint
+- Knowledge Bank API
+- Database-backed knowledge persistence
+- Six diagnostic categories
+- Complete diagnostic paths
+- Arabic / English UI
+- AI prompt workflow
+- Word / PDF reporting
+- Automated repository checks
+
+### Known MVP limitations
+
+- Authentication and role-based access are not implemented yet.
+- Expert Directory persistence is currently browser-local rather than a shared team database.
+- The AI hand-off is intentionally external rather than a built-in paid AI service.
+- Advanced audit logging, richer search / RAG, analytics, and enterprise governance remain future work.
+
+## Local development
 
 From the project root:
 
@@ -124,179 +175,56 @@ cd backend
 
 Then open:
 
-* `http://127.0.0.1:8000/` — DSNG Troubleshooting Assistant
-* `http://127.0.0.1:8000/docs` — Swagger API documentation
-* `http://127.0.0.1:8000/health` — health check
-* `http://127.0.0.1:8000/api/diagnostic/categories` — diagnostic categories
-* `http://127.0.0.1:8000/api/diagnostic/stats` — diagnostic statistics
-
-## AI assistance
-
-The application does **not** require the project owner's ChatGPT, Claude, or API account.
-
-When a case is not adequately covered by the deterministic troubleshooting trees, the AI Gateway prepares a structured engineering prompt.
-
-The user can then:
-
-1. Copy the prepared prompt.
-2. Open ChatGPT using their own account.
-3. Open Claude using their own account.
-4. Paste the prepared engineering prompt into the selected assistant.
-
-This design avoids embedding a shared API key in the public application and avoids charging external AI usage to the project owner.
-
-## Environment configuration
-
-The public repository includes:
-
-```text
-backend/.env.example
-```
-
-Example:
-
-```env
-AI_PROVIDER=external
-ANTHROPIC_API_KEY=
-ANTHROPIC_MODEL=claude-sonnet-4-6
-```
-
-The local file:
-
-```text
-backend/.env
-```
-
-is intentionally excluded from Git through `.gitignore`.
-
-No secret, password, API key, or personal credential should be committed to the repository.
-
-## Knowledge Bank
-
-The Knowledge Bank allows engineers to document field-discovered faults and fixes.
-
-Each contribution is initially created as:
-
-```text
-pending
-```
-
-A review endpoint can then transition the contribution to:
-
-```text
-approved
-```
-
-This controlled-learning approach is intended to prevent unreviewed field observations from automatically becoming trusted departmental knowledge.
-
-## Equipment Profiles
-
-Equipment is represented as data rather than hard-coded diagnostic logic.
-
-This allows the system to remain vendor-neutral and provides a foundation for future equipment-aware troubleshooting.
-
-Example profile fields include:
-
-```text
-Category
-Manufacturer
-Model
-Function
-Notes
-```
+- `http://127.0.0.1:8000/` — application
+- `http://127.0.0.1:8000/docs` — API documentation
+- `http://127.0.0.1:8000/health` — health check
+- `http://127.0.0.1:8000/api/knowledge` — Knowledge Bank API
 
 ## Testing
 
-The project includes automated tests covering:
+The repository includes automated tests covering API health, diagnostic categories and nodes, tree integrity, complete diagnostic paths, Knowledge Bank CRUD and review workflow, equipment profiles, and frontend integration.
 
-* API health
-* Diagnostic categories
-* Diagnostic node retrieval
-* Invalid node handling
-* Tree integrity
-* Scenario counts
-* Complete diagnostic paths
-* Knowledge Bank CRUD
-* Knowledge review workflow
-* Knowledge validation
-* Equipment Profile CRUD
-* Frontend integration
-
-Run:
-
-```powershell
-python -m pytest -v
-```
-
-The current verified result is:
-
-```text
-17 passed
-```
-
-## Design principles
-
-### Deterministic first
-
-Safety-critical or operational troubleshooting should not depend solely on a generative model.
-
-The decision trees provide predictable, reviewable diagnostic logic.
-
-### Controlled learning
-
-Field knowledge should be captured and reviewed before becoming trusted departmental knowledge.
-
-### Vendor neutral
-
-Equipment information is stored as data instead of becoming embedded inside diagnostic rules.
-
-### Public safe
-
-The project should be publishable without exposing the owner's private API credentials or account.
-
-### Human in the loop
-
-AI-generated content is advisory. Engineering judgment, official procedures, and applicable safety requirements remain authoritative.
-
-## Project status
-
-This project is an evolving engineering MVP.
-
-The current release demonstrates:
-
-```text
-Diagnostic Engine        ✅
-Knowledge Bank           ✅
-Knowledge Review         ✅
-Equipment Profiles       ✅
-AI Gateway               ✅
-ChatGPT / Claude Fallback ✅
-Arabic / English         ✅
-Automated Tests          ✅ 17/17
-Public-safe configuration ✅
-```
-
-Future work may include authentication, richer knowledge search, RAG, audit logging, expert escalation, analytics, and deeper equipment-aware diagnostics.
+The current repository reports a successful automated test result of **17 passed**.
 
 ## Contributing
 
-Engineering feedback, additional diagnostic scenarios, equipment knowledge, usability improvements, and documentation contributions are welcome.
+This project is intentionally open to engineering learning and contribution.
 
-Contributions should preserve the project's safety-oriented and reviewable engineering approach.
+If you have useful field knowledge, a better diagnostic question, a missing fault scenario, equipment-specific insight, a documentation improvement, or a safer troubleshooting workflow, contributions are welcome.
+
+Please keep contributions:
+
+- technically reasoned,
+- reviewable,
+- vendor-neutral where possible,
+- respectful of operational and RF safety,
+- clearly separated from unverified assumptions.
+
+## A note about sharing knowledge
+
+This project is also a small personal attempt at **sharing useful engineering knowledge openly**.
+
+The idea is simple:
+
+> What we learn through years of field work should not disappear when a shift ends or an engineer moves on.
+
+May this project encourage someone to learn, another person to teach, and another engineer to document one useful lesson for the colleague who will face the same fault tomorrow.
+
+**اللهم ارزقنا وارزق منا.**
 
 ## Disclaimer
 
-This project is an engineering support and educational tool.
+This project is an engineering support and educational tool. It does not replace satellite operator requirements, equipment manufacturer procedures, approved departmental SOPs, or qualified engineering judgment.
 
-It does not replace official satellite operator requirements, equipment manufacturer procedures, departmental SOPs, or qualified engineering judgment.
+Before performing any action that may affect an operational transmission, RF chain, power amplifier, antenna system, or other critical equipment, follow the applicable approved procedures and safety requirements.
 
-Before performing any action that may affect an operational transmission, RF chain, power amplifier, antenna system, or other critical equipment, follow the applicable approved procedures.
+## License
 
----
+MIT License.
 
-**AI Broadcast Engineering Assistant**
-Earth Station / DSNG Engineering Support
-Created by Laith Mahdawi
----
+## Author
+
+**Laith Mahdawi**  
+AI Broadcast Engineering Assistant — Earth Station / DSNG Engineering Support
 
 © 2026 Laith Mahdawi — AI Broadcast Engineering Assistant Public MVP
