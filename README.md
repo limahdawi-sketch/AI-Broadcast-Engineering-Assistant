@@ -5,6 +5,17 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-blue)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688)](https://fastapi.tiangolo.com/)
 
+## About the Project
+
+**AI Broadcast Engineering Assistant** is an independent engineering project focused on Earth Station and DSNG troubleshooting.
+
+This Public MVP is shared freely with the engineering community as a contribution to knowledge and practical field learning.
+
+**Original Public MVP by Laith Mahdawi — 2026**
+
+The Public MVP is maintained as a stable, community-oriented version. Future professional and enterprise capabilities may be developed separately without compromising the purpose and accessibility of this public release.
+
+> *AI should assist engineering judgment, not replace it.*
 
 A practical engineering support tool for Earth Station / DSNG troubleshooting.
 
@@ -286,3 +297,6 @@ Before performing any action that may affect an operational transmission, RF cha
 **AI Broadcast Engineering Assistant**
 Earth Station / DSNG Engineering Support
 Created by Laith Mahdawi
+---
+
+© 2026 Laith Mahdawi — AI Broadcast Engineering Assistant Public MVP
