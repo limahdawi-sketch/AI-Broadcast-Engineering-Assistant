@@ -790,8 +790,7 @@ document.getElementById('aiSubmit').onclick = async ()=>{
 };
 
 /* ---------------- KNOWLEDGE BANK ---------------- */
-const KB_KEY = 'kb_entries';
-const storageOK = (typeof window !== 'undefined') && !!window.storage;
+const KB_API = '/api/knowledge';
 let kbEntries = [];
 let kbSessionOnly = false;
 
@@ -799,77 +798,129 @@ function kbCategoryLabel(id){
   const c = CAT(id);
   return c ? c.title : T('otherCategory');
 }
+
 function populateKBCategorySelect(){
   const sel = document.getElementById('kbCategory');
   const prev = sel.value;
-  sel.innerHTML = CATS().map(c=>`<option value="${c.id}">${c.title}</option>`).join('')
-    + `<option value="other">${T('otherCategory')}</option>`;
+
+  sel.innerHTML = CATS().map(c =>
+    `<option value="${c.id}">${c.title}</option>`
+  ).join('') + `<option value="other">${T('otherCategory')}</option>`;
+
   if(prev) sel.value = prev;
 }
-async function loadShared(key){
-  if(!storageOK){ kbSessionOnly = true; return []; }
+
+function normalizeKBEntry(entry){
+  return {
+    ...entry,
+    date: entry.created_at || entry.date || new Date().toISOString()
+  };
+}
+
+async function loadKnowledgeEntries(){
   try{
-    const res = await window.storage.get(key, true);
-    return res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ return []; }
-}
-async function persistShared(key, entries){
-  if(!storageOK){ kbSessionOnly = true; return false; }
-  try{
-    const result = await window.storage.set(key, JSON.stringify(entries), true);
-    return !!result;
-  }catch(e){ console.error('storage error', e); return false; }
-}
-function escapeHtml(str){
-  return String(str||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-function localeDate(iso){
-  const d = new Date(iso);
-  if(isNaN(d)) return '';
-  return d.toLocaleDateString(LANG==='ar'?'ar-EG':'en-GB', {year:'numeric', month:'short', day:'numeric'});
+    const response = await fetch(KB_API, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    if(!response.ok){
+      throw new Error(`Knowledge API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+    kbSessionOnly = false;
+    return Array.isArray(data) ? data.map(normalizeKBEntry) : [];
+  }catch(error){
+    console.error('Knowledge Bank load error:', error);
+    kbSessionOnly = true;
+    return [];
+  }
 }
 
 function renderKBList(){
   const list = document.getElementById('kbList');
   const count = document.getElementById('kbCount');
+
   count.textContent = kbSessionOnly
     ? T('kbCountSessionOnly').replace('{n}', kbEntries.length)
     : T('kbCountShared').replace('{n}', kbEntries.length);
 
-  if(kbEntries.length===0){
+  if(kbEntries.length === 0){
     list.innerHTML = `<div class="empty-msg">${T('kbEmpty')}</div>`;
     return;
   }
+
   list.innerHTML = [...kbEntries].reverse().map(e=>`
-    <div class="entry-card" data-id="${e.id}">
+    <div class="entry-card" data-id="${escapeHtml(e.id)}">
       <div class="entry-card-top">
         <span class="entry-title">${escapeHtml(e.title)}</span>
         <span class="entry-badge">${T('kbPendingBadge')}</span>
       </div>
-      <div class="entry-cat-tag mono">${kbCategoryLabel(e.category)}</div>
+
+      <div class="entry-cat-tag mono">
+        ${escapeHtml(kbCategoryLabel(e.category))}
+      </div>
+
       <div class="entry-field-label">${T('kbCausesLabel')}</div>
       <div class="entry-field-text">${escapeHtml(e.causes)}</div>
+
       <div class="entry-field-label">${T('kbFixLabel')}</div>
       <div class="entry-field-text">${escapeHtml(e.fix)}</div>
-      ${e.notes ? `<div class="entry-field-label">${T('kbNotesLabel')}</div><div class="entry-field-text">${escapeHtml(e.notes)}</div>` : ''}
-      <div class="entry-meta">${escapeHtml(e.author||T('unspecifiedEngineer'))} &middot; ${localeDate(e.date)}</div>
+
+      ${e.notes
+        ? `<div class="entry-field-label">${T('kbNotesLabel')}</div>
+           <div class="entry-field-text">${escapeHtml(e.notes)}</div>`
+        : ''}
+
+      <div class="entry-meta">
+        ${escapeHtml(e.author || T('unspecifiedEngineer'))}
+        &middot;
+        ${localeDate(e.date)}
+      </div>
+
       <div class="entry-actions">
         <button class="btn" data-act="word">${T('downloadWord')}</button>
         <button class="btn" data-act="pdf">${T('printPdf')}</button>
         <button class="btn danger" data-act="del">${T('delete')}</button>
       </div>
-    </div>`).join('');
+    </div>
+  `).join('');
 
   list.querySelectorAll('.entry-card').forEach(card=>{
     const id = card.dataset.id;
-    const entry = kbEntries.find(x=>x.id===id);
-    card.querySelector('[data-act="word"]').onclick = ()=> downloadEntryAsWord(entry, 'kb');
-    card.querySelector('[data-act="pdf"]').onclick = ()=> printEntry(entry, 'kb');
+    const entry = kbEntries.find(x => x.id === id);
+
+    card.querySelector('[data-act="word"]').onclick =
+      () => downloadEntryAsWord(entry, 'kb');
+
+    card.querySelector('[data-act="pdf"]').onclick =
+      () => printEntry(entry, 'kb');
+
     card.querySelector('[data-act="del"]').onclick = async ()=>{
       if(!confirm(T('confirmDelete'))) return;
-      kbEntries = kbEntries.filter(x=>x.id!==id);
-      await persistShared(KB_KEY, kbEntries);
-      renderKBList();
+
+      try{
+        const response = await fetch(`${KB_API}/${encodeURIComponent(id)}`, {
+          method: 'DELETE'
+        });
+
+        if(!response.ok){
+          throw new Error(`Delete failed with ${response.status}`);
+        }
+
+        kbEntries = kbEntries.filter(x => x.id !== id);
+        renderKBList();
+      }catch(error){
+        console.error('Knowledge Bank delete error:', error);
+        alert(
+          LANG === 'ar'
+            ? 'تعذر حذف السجل من قاعدة المعرفة.'
+            : 'The knowledge entry could not be deleted.'
+        );
+      }
     };
   });
 }
@@ -880,6 +931,10 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
   const causes = document.getElementById('kbCauses').value.trim();
   const fix = document.getElementById('kbFix').value.trim();
   const notes = document.getElementById('kbNotes').value.trim();
+  const author =
+    document.getElementById('engName').value.trim() ||
+    T('unspecifiedEngineer');
+
   const status = document.getElementById('kbStatus');
 
   if(!title || !causes || !fix){
@@ -887,23 +942,64 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
     status.style.color = 'var(--red)';
     return;
   }
-  const entry = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,7),
-    title, category, causes, fix, notes,
-    author: (document.getElementById('engName').value.trim() || T('unspecifiedEngineer')),
-    date: new Date().toISOString()
+
+  const payload = {
+    title,
+    category,
+    causes,
+    fix,
+    notes,
+    author
   };
-  kbEntries.push(entry);
-  const ok = await persistShared(KB_KEY, kbEntries);
-  status.style.color = 'var(--cyan)';
-  status.textContent = ok ? T('savedOk') : T('savedSessionOnly');
-  setTimeout(()=> status.textContent='', 3000);
-  document.getElementById('kbTitle').value='';
-  document.getElementById('kbCauses').value='';
-  document.getElementById('kbFix').value='';
-  document.getElementById('kbNotes').value='';
-  renderKBList();
+
+  const saveBtn = document.getElementById('kbSaveBtn');
+  saveBtn.disabled = true;
+
+  try{
+    const response = await fetch(KB_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if(!response.ok){
+      throw new Error(data.detail || `Save failed with ${response.status}`);
+    }
+
+    const entry = normalizeKBEntry(data);
+
+    kbEntries.push(entry);
+    kbSessionOnly = false;
+
+    status.style.color = 'var(--cyan)';
+    status.textContent = T('savedOk');
+
+    document.getElementById('kbTitle').value = '';
+    document.getElementById('kbCauses').value = '';
+    document.getElementById('kbFix').value = '';
+    document.getElementById('kbNotes').value = '';
+
+    renderKBList();
+
+  }catch(error){
+    console.error('Knowledge Bank save error:', error);
+
+    status.style.color = 'var(--red)';
+    status.textContent =
+      LANG === 'ar'
+        ? 'تعذر حفظ السجل في قاعدة المعرفة.'
+        : 'The knowledge entry could not be saved.';
+  }finally{
+    saveBtn.disabled = false;
+    setTimeout(()=> status.textContent = '', 3000);
+  }
 };
+
 
 /* ---- Word / PDF export (shared by KB + Expert Directory) ---- */
 function wordDocHtml(bodyHtml, title, dir){
@@ -1081,10 +1177,11 @@ document.getElementById('expSaveBtn').onclick = async ()=>{
 
   document.getElementById('kbCount').textContent = '...';
   document.getElementById('expCount').textContent = '...';
-  kbEntries = await loadShared(KB_KEY);
-  expEntries = await loadShared(EXP_KEY);
-  renderKBList();
-  renderExpertList();
+  
+  kbEntries = await loadKnowledgeEntries();
+expEntries = await loadShared(EXP_KEY);
+renderKBList();
+renderExpertList();
 })();
 </script>
 </body>
