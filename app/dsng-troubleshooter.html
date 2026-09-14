@@ -831,8 +831,12 @@ async function loadKnowledgeEntries(){
     }
 
     const data = await response.json();
+
     kbSessionOnly = false;
-    return Array.isArray(data) ? data.map(normalizeKBEntry) : [];
+
+    return Array.isArray(data)
+      ? data.map(normalizeKBEntry)
+      : [];
   }catch(error){
     console.error('Knowledge Bank load error:', error);
     kbSessionOnly = true;
@@ -853,7 +857,7 @@ function renderKBList(){
     return;
   }
 
-  list.innerHTML = [...kbEntries].reverse().map(e=>`
+  list.innerHTML = [...kbEntries].reverse().map(e => `
     <div class="entry-card" data-id="${escapeHtml(e.id)}">
       <div class="entry-card-top">
         <span class="entry-title">${escapeHtml(e.title)}</span>
@@ -889,32 +893,46 @@ function renderKBList(){
     </div>
   `).join('');
 
-  list.querySelectorAll('.entry-card').forEach(card=>{
+  list.querySelectorAll('.entry-card').forEach(card => {
     const id = card.dataset.id;
-    const entry = kbEntries.find(x => x.id === id);
+    const entry = kbEntries.find(x => String(x.id) === String(id));
 
-    card.querySelector('[data-act="word"]').onclick =
-      () => downloadEntryAsWord(entry, 'kb');
+    card.querySelector('[data-act="word"]').onclick = () => {
+      if(entry) downloadEntryAsWord(entry, 'kb');
+    };
 
-    card.querySelector('[data-act="pdf"]').onclick =
-      () => printEntry(entry, 'kb');
+    card.querySelector('[data-act="pdf"]').onclick = () => {
+      if(entry) printEntry(entry, 'kb');
+    };
 
-    card.querySelector('[data-act="del"]').onclick = async ()=>{
+    card.querySelector('[data-act="del"]').onclick = async () => {
+      if(!entry) return;
       if(!confirm(T('confirmDelete'))) return;
 
       try{
-        const response = await fetch(`${KB_API}/${encodeURIComponent(id)}`, {
-          method: 'DELETE'
-        });
+        const response = await fetch(
+          `${KB_API}/${encodeURIComponent(id)}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Accept': 'application/json'
+            }
+          }
+        );
 
         if(!response.ok){
           throw new Error(`Delete failed with ${response.status}`);
         }
 
-        kbEntries = kbEntries.filter(x => x.id !== id);
+        kbEntries = kbEntries.filter(
+          x => String(x.id) !== String(id)
+        );
+
         renderKBList();
+
       }catch(error){
         console.error('Knowledge Bank delete error:', error);
+
         alert(
           LANG === 'ar'
             ? 'تعذر حذف السجل من قاعدة المعرفة.'
@@ -925,7 +943,7 @@ function renderKBList(){
   });
 }
 
-document.getElementById('kbSaveBtn').onclick = async ()=>{
+document.getElementById('kbSaveBtn').onclick = async () => {
   const title = document.getElementById('kbTitle').value.trim();
   const category = document.getElementById('kbCategory').value;
   const causes = document.getElementById('kbCauses').value.trim();
@@ -936,6 +954,7 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
     T('unspecifiedEngineer');
 
   const status = document.getElementById('kbStatus');
+  const saveBtn = document.getElementById('kbSaveBtn');
 
   if(!title || !causes || !fix){
     status.textContent = T('kbValidationMsg');
@@ -952,7 +971,6 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
     author
   };
 
-  const saveBtn = document.getElementById('kbSaveBtn');
   saveBtn.disabled = true;
 
   try{
@@ -968,12 +986,12 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
     const data = await response.json();
 
     if(!response.ok){
-      throw new Error(data.detail || `Save failed with ${response.status}`);
+      throw new Error(
+        data.detail || `Save failed with ${response.status}`
+      );
     }
 
-    const entry = normalizeKBEntry(data);
-
-    kbEntries.push(entry);
+    kbEntries.push(normalizeKBEntry(data));
     kbSessionOnly = false;
 
     status.style.color = 'var(--cyan)';
@@ -996,7 +1014,10 @@ document.getElementById('kbSaveBtn').onclick = async ()=>{
         : 'The knowledge entry could not be saved.';
   }finally{
     saveBtn.disabled = false;
-    setTimeout(()=> status.textContent = '', 3000);
+
+    setTimeout(() => {
+      status.textContent = '';
+    }, 3000);
   }
 };
 
